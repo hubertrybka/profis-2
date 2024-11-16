@@ -11,6 +11,7 @@ import wandb
 import re
 import argparse
 from tqdm import tqdm
+import os
 
 class ProfisDataset(Dataset):
     """
@@ -110,8 +111,7 @@ def load_charset(path='data/smiles_alphabet.txt'):
     charset = [char.strip() for char in charset]
     return charset
 
-
-class MolecularVAE(nn.Module):
+class Profis(nn.Module):
     def __init__(self,
                  fp_size=2048,
                  fc1_size=1024,
@@ -119,15 +119,15 @@ class MolecularVAE(nn.Module):
                  latent_size=32,
                  alphabet_size=len(load_charset())
         ):
-        super(MolecularVAE, self).__init__()
+        super(Profis, self).__init__()
 
         self.fc1 = nn.Linear(fp_size, fc1_size)
         self.fc2 = nn.Linear(fc1_size, fc2_size)
         self.fc31 = nn.Linear(fc2_size, latent_size)
         self.fc32 = nn.Linear(fc2_size, latent_size)
-        self.fc4 = nn.Linear(latent_size, 292)
-        self.gru = nn.GRU(292, 501, 3, batch_first=True)
-        self.fc5 = nn.Linear(501, alphabet_size)
+        self.fc4 = nn.Linear(latent_size, 256)
+        self.gru = nn.GRU(256, 512, 3, batch_first=True)
+        self.fc5 = nn.Linear(512, alphabet_size)
 
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
@@ -159,9 +159,9 @@ class MolecularVAE(nn.Module):
         return self.decode(z), z_mean, z_logvar
 
 def vae_loss(x_decoded_mean, y, z_mean, z_logvar):
-    xent_loss = F.binary_cross_entropy(x_decoded_mean, y, reduction='sum')
+    xent_loss = F.binary_cross_entropy(x_decoded_mean, y, reduction='mean')
     kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
-    return xent_loss + kl_loss
+    return xent_loss + kl_loss, kl_loss
 
 def is_valid(smiles):
     try:
@@ -170,10 +170,11 @@ def is_valid(smiles):
     except:
         return False
 
-def train(model, train_loader, val_loader, epochs=100, device='cuda', print_progress=False):
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
 
-    wandb.init(project='profis2')
     charset = load_charset()
+
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
 
     for epoch in range(1, epochs + 1):
@@ -182,17 +183,20 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', print_prog
 
         model.train()
         train_loss = 0
+        mean_kld_loss = 0
         for batch_idx, data in enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader):
             X, y = data
             X = X.to(device)
             y = y.to(device)
             optimizer.zero_grad()
             output, mean, logvar = model(X)
-            loss = vae_loss(output, y, mean, logvar)
+            loss, kld_loss = vae_loss(output, y, mean, logvar)
             loss.backward()
             train_loss += loss.item()
+            kld_loss += kld_loss.item()
             optimizer.step()
-        train_loss /= len(train_loader.dataset)
+        train_loss /= len(train_loader)
+        mean_kld_loss /= len(train_loader)
 
         model.eval()
         val_loss = 0
@@ -202,15 +206,15 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', print_prog
             X = X.to(device)
             y = y.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 10 == 0:
+            if batch_idx % 50 == 0:
                 print('Input:', decode_smiles_from_indexes(
                     y[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
                     output[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
-            loss = vae_loss(output, y, mean, logvar)
-            val_loss += loss
+            loss, _ = vae_loss(output, y, mean, logvar)
+            val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
-        val_loss /= len(val_loader.dataset)
+        val_loss /= len(val_loader)
         val_outputs = torch.cat(val_outputs, dim=0).numpy()
         val_out_smiles = [decode_smiles_from_indexes(
             out.argmax(axis=1), charset) for out in val_outputs]
@@ -222,25 +226,39 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', print_prog
 
     return model
 
-
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--epochs', type=int, default=100)
-argparser.add_argument('--device', type=str, default='cuda')
+argparser.add_argument('--epochs', type=int, default=100,
+                       help='Number of epochs to train the model')
+argparser.add_argument('--batch_size', type=int, default=128)
+argparser.add_argument('--lr', type=float, default=0.001,
+                       help='Learning rate for the optimizer')
+argparser.add_argument('--fp_type', type=str, default='ECFP',
+                       help='Type of fingerprint to use (ECFP or KRFP)',
+                       choices=['ECFP', 'KRFP'])
+argparser.add_argument('--name', type=str, default='profis')
 
+args = argparser.parse_args()
 
-train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet')[:10000]
-test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet')
-data_train = ProfisDataset(train_df, fp_len=2048)
-data_val = ProfisDataset(test_df, fp_len=2048)
-train_loader = torch.utils.data.DataLoader(data_train, batch_size=128, shuffle=True)
-val_loader = torch.utils.data.DataLoader(data_val, batch_size=128, shuffle=False)
+wandb.init(project='profis2', name=args.name)
+
+train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet' if args.fp_type == 'ECFP' else
+                           'data/RNN_dataset_KRFP_train_90.parquet')
+test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if args.fp_type == 'ECFP' else
+                          'data/RNN_dataset_KRFP_val_10.parquet')
+data_train = ProfisDataset(train_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
+data_val = ProfisDataset(test_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
+train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
+val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=8)
 
 torch.manual_seed(42)
 
-epochs = 100
+epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = MolecularVAE().to(device)
-optimizer = optim.Adam(model.parameters())
+model = Profis().to(device)
+model = train(model, train_loader, val_loader, epochs, device, lr=args.lr)
 
-model = train(model, train_loader, val_loader, epochs, device, print_progress=True)
+if os.path.exists('models') is False:
+    os.makedirs('models')
+
+model.save(f'models/{args.name}.pt')
