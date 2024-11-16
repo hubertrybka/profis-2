@@ -247,8 +247,8 @@ test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if args.fp_type
                           'data/RNN_dataset_KRFP_val_10.parquet')
 data_train = ProfisDataset(train_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
 data_val = ProfisDataset(test_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
-train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
-val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=8)
+train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=4)
+val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
 torch.manual_seed(42)
 
@@ -256,7 +256,7 @@ epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = Profis().to(device)
-model = train(model, train_loader, val_loader, epochs, device, lr=args.lr)
+model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=True)
 
 if os.path.exists('models') is False:
     os.makedirs('models')
