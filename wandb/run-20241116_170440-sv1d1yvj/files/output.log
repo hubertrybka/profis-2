@@ -1,0 +1,25 @@
+Using device: cuda
+Epoch 1
+Traceback (most recent call last):
+  File "/home/hubert/github/profis-2/train.py", line 238, in <module>
+    model = train(model, train_loader, val_loader, epochs, device)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hubert/github/profis-2/train.py", line 188, in train
+    output, mean, logvar = model(X)
+                           ^^^^^^^^
+  File "/home/hubert/miniconda3/envs/profis/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hubert/github/profis-2/train.py", line 157, in forward
+    return self.decode(z), z_mean, z_logvar
+           ^^^^^^^^^^^^^^
+  File "/home/hubert/github/profis-2/train.py", line 148, in decode
+    output, hn = self.gru(z)
+                 ^^^^^^^^^^^
+  File "/home/hubert/miniconda3/envs/profis/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hubert/miniconda3/envs/profis/lib/python3.11/site-packages/torch/nn/modules/rnn.py", line 998, in forward
+    result = _VF.gru(input, hx, self._flat_weights, self.bias, self.num_layers,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.82 GiB (GPU 0; 1.95 GiB total capacity; 1.12 GiB already allocated; 765.88 MiB free; 1.15 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

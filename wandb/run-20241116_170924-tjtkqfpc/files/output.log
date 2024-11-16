@@ -1,0 +1,30 @@
+Using device: cuda
+Epoch 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20it [01:10,  3.51s/it]
+Traceback (most recent call last):
+  File "/home/hubert/github/profis-2/train.py", line 239, in <module>
+    model = train(model, train_loader, val_loader, epochs, device, print_progress=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hubert/github/profis-2/train.py", line 192, in train
+    train_loss += loss.item()
+                  ^^^^^^^^^^^
+KeyboardInterrupt

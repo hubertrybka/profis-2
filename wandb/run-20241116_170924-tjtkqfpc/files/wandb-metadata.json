@@ -1,0 +1,88 @@
+{
+    "os": "Linux-6.8.0-48-generic-x86_64-with-glibc2.35",
+    "python": "3.11.5",
+    "heartbeatAt": "2024-11-16T16:09:25.286579",
+    "startedAt": "2024-11-16T16:09:24.427257",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/hubert/github/profis-2/train.py",
+    "codePathLocal": "train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/hubertrybka/profis-2.git",
+        "commit": "fb7e44c056891f59b6bee655af505da0f4b8a09b"
+    },
+    "email": "hubert.rybka@doctoral.uj.edu.pl",
+    "root": "/home/hubert/github/profis-2",
+    "host": "hubert-ThinkPad-T480",
+    "username": "hubert",
+    "executable": "/home/hubert/miniconda3/envs/profis/bin/python",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 2600.002375,
+        "min": 400.0,
+        "max": 4200.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3099.855,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3099.964,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3100.063,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3100.018,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3100.145,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3099.931,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3099.99,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 3099.945,
+            "min": 400.0,
+            "max": 4200.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 467.8895797729492,
+            "used": 187.11097717285156
+        }
+    },
+    "gpu": "NVIDIA GeForce MX150",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce MX150",
+            "memory_total": 2147483648
+        }
+    ],
+    "memory": {
+        "total": 31.097293853759766
+    }
+}

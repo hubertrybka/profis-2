@@ -1,0 +1,280 @@
+2024-11-16 17:06:01,634 INFO    StreamThr :93981 [internal.py:wandb_internal():86] W&B internal server running at pid: 93981, started at: 2024-11-16 17:06:01.633903
+2024-11-16 17:06:01,635 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status
+2024-11-16 17:06:01,636 INFO    WriterThread:93981 [datastore.py:open_for_write():85] open: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/run-b9tr1s6r.wandb
+2024-11-16 17:06:01,637 DEBUG   SenderThread:93981 [sender.py:send():380] send: header
+2024-11-16 17:06:01,640 DEBUG   SenderThread:93981 [sender.py:send():380] send: run
+2024-11-16 17:06:02,062 INFO    SenderThread:93981 [dir_watcher.py:__init__():211] watching files in: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files
+2024-11-16 17:06:02,063 INFO    SenderThread:93981 [sender.py:_start_run_threads():1122] run started: b9tr1s6r with start time 1731773161.633803
+2024-11-16 17:06:02,076 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: check_version
+2024-11-16 17:06:02,077 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: check_version
+2024-11-16 17:06:02,279 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: run_start
+2024-11-16 17:06:02,290 DEBUG   HandlerThread:93981 [system_info.py:__init__():32] System info init
+2024-11-16 17:06:02,290 DEBUG   HandlerThread:93981 [system_info.py:__init__():47] System info init done
+2024-11-16 17:06:02,290 INFO    HandlerThread:93981 [system_monitor.py:start():181] Starting system monitor
+2024-11-16 17:06:02,290 INFO    SystemMonitor:93981 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2024-11-16 17:06:02,291 INFO    HandlerThread:93981 [system_monitor.py:probe():201] Collecting system info
+2024-11-16 17:06:02,291 INFO    SystemMonitor:93981 [interfaces.py:start():190] Started cpu monitoring
+2024-11-16 17:06:02,292 INFO    SystemMonitor:93981 [interfaces.py:start():190] Started disk monitoring
+2024-11-16 17:06:02,292 INFO    SystemMonitor:93981 [interfaces.py:start():190] Started gpu monitoring
+2024-11-16 17:06:02,293 INFO    SystemMonitor:93981 [interfaces.py:start():190] Started memory monitoring
+2024-11-16 17:06:02,294 INFO    SystemMonitor:93981 [interfaces.py:start():190] Started network monitoring
+2024-11-16 17:06:02,299 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:02,299 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:02,303 DEBUG   HandlerThread:93981 [system_info.py:probe():196] Probing system
+2024-11-16 17:06:02,305 DEBUG   HandlerThread:93981 [system_info.py:_probe_git():181] Probing git
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_info.py:_probe_git():189] Probing git done
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_info.py:probe():244] Probing system done
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_monitor.py:probe():210] {'os': 'Linux-6.8.0-48-generic-x86_64-with-glibc2.35', 'python': '3.11.5', 'heartbeatAt': '2024-11-16T16:06:02.303948', 'startedAt': '2024-11-16T16:06:01.630646', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/home/hubert/github/profis-2/train.py', 'codePathLocal': 'train.py', 'codePath': 'train.py', 'git': {'remote': 'https://github.com/hubertrybka/profis-2.git', 'commit': 'fb7e44c056891f59b6bee655af505da0f4b8a09b'}, 'email': 'hubert.rybka@doctoral.uj.edu.pl', 'root': '/home/hubert/github/profis-2', 'host': 'hubert-ThinkPad-T480', 'username': 'hubert', 'executable': '/home/hubert/miniconda3/envs/profis/bin/python', 'cpu_count': 4, 'cpu_count_logical': 8, 'cpu_freq': {'current': 3199.8681250000004, 'min': 400.0, 'max': 4200.0}, 'cpu_freq_per_core': [{'current': 3200.612, 'min': 400.0, 'max': 4200.0}, {'current': 3202.497, 'min': 400.0, 'max': 4200.0}, {'current': 3199.973, 'min': 400.0, 'max': 4200.0}, {'current': 3199.99, 'min': 400.0, 'max': 4200.0}, {'current': 3199.732, 'min': 400.0, 'max': 4200.0}, {'current': 3200.274, 'min': 400.0, 'max': 4200.0}, {'current': 3200.996, 'min': 400.0, 'max': 4200.0}, {'current': 3199.993, 'min': 400.0, 'max': 4200.0}], 'disk': {'/': {'total': 467.8895797729492, 'used': 187.1072540283203}}, 'gpu': 'NVIDIA GeForce MX150', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA GeForce MX150', 'memory_total': 2147483648}], 'memory': {'total': 31.097293853759766}}
+2024-11-16 17:06:02,312 INFO    HandlerThread:93981 [system_monitor.py:probe():211] Finished collecting system info
+2024-11-16 17:06:02,312 INFO    HandlerThread:93981 [system_monitor.py:probe():214] Publishing system info
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_info.py:_save_pip():68] Saving pip packages done
+2024-11-16 17:06:02,312 DEBUG   HandlerThread:93981 [system_info.py:_save_conda():75] Saving list of conda packages installed into the current environment
+2024-11-16 17:06:03,063 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_created():271] file/dir created: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/conda-environment.yaml
+2024-11-16 17:06:03,064 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_created():271] file/dir created: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/requirements.txt
+2024-11-16 17:06:04,300 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:04,300 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:05,814 DEBUG   HandlerThread:93981 [system_info.py:_save_conda():87] Saving conda packages done
+2024-11-16 17:06:05,814 INFO    HandlerThread:93981 [system_monitor.py:probe():216] Finished publishing system info
+2024-11-16 17:06:05,816 DEBUG   SenderThread:93981 [sender.py:send():380] send: files
+2024-11-16 17:06:05,816 INFO    SenderThread:93981 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2024-11-16 17:06:05,824 DEBUG   SenderThread:93981 [sender.py:send():380] send: telemetry
+2024-11-16 17:06:05,867 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:06:05,867 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:06:05,868 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:06:06,063 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/conda-environment.yaml
+2024-11-16 17:06:06,063 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_created():271] file/dir created: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/wandb-metadata.json
+2024-11-16 17:06:06,063 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_created():271] file/dir created: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/output.log
+2024-11-16 17:06:06,303 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:06,303 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:06,444 INFO    wandb-upload_0:93981 [upload_job.py:push():131] Uploaded file /tmp/tmpig62vo28wandb/qg3zke69-wandb-metadata.json
+2024-11-16 17:06:07,074 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:08,063 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/output.log
+2024-11-16 17:06:08,304 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:08,304 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:10,305 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:10,305 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:12,075 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:12,307 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:12,308 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:14,308 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:14,308 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:16,309 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:16,309 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:17,079 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:18,312 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:18,312 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:20,312 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:20,313 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:22,082 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:22,313 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:22,314 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:23,956 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:06:23,956 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:06:23,957 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:06:24,316 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:24,316 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:26,317 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:26,317 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:27,262 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:28,318 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:28,318 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:30,319 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:30,319 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:32,265 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:32,363 ERROR   gpu       :93981 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-11-16 17:06:32,364 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:32,364 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:33,075 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/config.yaml
+2024-11-16 17:06:34,364 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:34,364 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:36,367 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:36,367 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:37,664 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:38,368 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:38,368 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:38,956 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:06:38,956 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:06:38,957 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:06:40,369 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:40,369 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:42,370 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:42,370 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:43,157 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:44,371 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:44,371 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:46,374 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:46,374 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:48,158 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:48,375 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:48,375 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:50,381 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:50,381 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:52,382 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:52,382 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:53,159 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:06:53,954 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:06:53,954 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:06:53,962 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:06:54,383 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:54,383 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:56,384 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:56,384 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:58,385 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:58,385 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:06:59,154 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:00,386 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:00,386 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:02,294 DEBUG   SystemMonitor:93981 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2024-11-16 17:07:02,295 DEBUG   SenderThread:93981 [sender.py:send():380] send: stats
+2024-11-16 17:07:02,447 ERROR   gpu       :93981 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-11-16 17:07:02,448 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:02,448 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:04,299 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:04,449 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:04,449 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:06,450 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:06,450 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:08,451 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:08,451 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:09,299 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:10,452 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:10,452 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:12,453 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:12,453 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:12,644 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:07:12,644 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:07:12,684 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:07:14,454 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:14,454 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:14,887 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:16,454 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:16,455 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:18,455 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:18,455 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:19,890 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:20,456 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:20,456 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:22,457 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:22,457 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:24,458 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:24,458 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:24,893 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:26,459 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:26,460 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:27,643 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: stop_status
+2024-11-16 17:07:27,643 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: stop_status
+2024-11-16 17:07:27,683 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: internal_messages
+2024-11-16 17:07:28,461 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:28,461 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:30,462 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:30,462 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:30,850 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:32,295 DEBUG   SenderThread:93981 [sender.py:send():380] send: stats
+2024-11-16 17:07:32,501 ERROR   gpu       :93981 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-11-16 17:07:32,502 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:32,502 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:34,502 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:34,502 ERROR   gpu       :93981 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-11-16 17:07:35,154 DEBUG   SenderThread:93981 [sender.py:send():380] send: exit
+2024-11-16 17:07:35,154 INFO    SenderThread:93981 [sender.py:send_exit():585] handling exit code: 255
+2024-11-16 17:07:35,154 INFO    SenderThread:93981 [sender.py:send_exit():587] handling runtime: 92
+2024-11-16 17:07:35,155 INFO    SenderThread:93981 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2024-11-16 17:07:35,155 INFO    SenderThread:93981 [sender.py:send_exit():593] send defer
+2024-11-16 17:07:35,155 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,155 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 0
+2024-11-16 17:07:35,155 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,155 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 0
+2024-11-16 17:07:35,155 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 1
+2024-11-16 17:07:35,155 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,155 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 1
+2024-11-16 17:07:35,156 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,156 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 1
+2024-11-16 17:07:35,156 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 2
+2024-11-16 17:07:35,156 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,156 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 2
+2024-11-16 17:07:35,156 INFO    HandlerThread:93981 [system_monitor.py:finish():190] Stopping system monitor
+2024-11-16 17:07:35,156 DEBUG   SystemMonitor:93981 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2024-11-16 17:07:35,156 DEBUG   SystemMonitor:93981 [system_monitor.py:_start():170] Publishing last batch of metrics
+2024-11-16 17:07:35,157 INFO    HandlerThread:93981 [interfaces.py:finish():202] Joined cpu monitor
+2024-11-16 17:07:35,157 INFO    HandlerThread:93981 [interfaces.py:finish():202] Joined disk monitor
+2024-11-16 17:07:35,198 ERROR   gpu       :93981 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-11-16 17:07:35,198 INFO    HandlerThread:93981 [interfaces.py:finish():202] Joined gpu monitor
+2024-11-16 17:07:35,198 INFO    HandlerThread:93981 [interfaces.py:finish():202] Joined memory monitor
+2024-11-16 17:07:35,198 INFO    HandlerThread:93981 [interfaces.py:finish():202] Joined network monitor
+2024-11-16 17:07:35,199 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,199 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 2
+2024-11-16 17:07:35,199 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 3
+2024-11-16 17:07:35,199 DEBUG   SenderThread:93981 [sender.py:send():380] send: stats
+2024-11-16 17:07:35,199 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,199 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 3
+2024-11-16 17:07:35,199 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,199 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 3
+2024-11-16 17:07:35,199 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 4
+2024-11-16 17:07:35,199 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,199 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 4
+2024-11-16 17:07:35,200 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,200 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 4
+2024-11-16 17:07:35,200 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 5
+2024-11-16 17:07:35,200 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,200 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 5
+2024-11-16 17:07:35,200 DEBUG   SenderThread:93981 [sender.py:send():380] send: summary
+2024-11-16 17:07:35,200 INFO    SenderThread:93981 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2024-11-16 17:07:35,201 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,201 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 5
+2024-11-16 17:07:35,201 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 6
+2024-11-16 17:07:35,201 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,201 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 6
+2024-11-16 17:07:35,201 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,201 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 6
+2024-11-16 17:07:35,201 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 7
+2024-11-16 17:07:35,201 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: status_report
+2024-11-16 17:07:35,201 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:35,201 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 7
+2024-11-16 17:07:35,201 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:35,201 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 7
+2024-11-16 17:07:36,108 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_created():271] file/dir created: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/wandb-summary.json
+2024-11-16 17:07:36,154 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: poll_exit
+2024-11-16 17:07:37,118 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 8
+2024-11-16 17:07:37,118 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: poll_exit
+2024-11-16 17:07:37,120 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:37,120 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 8
+2024-11-16 17:07:37,126 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:37,127 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 8
+2024-11-16 17:07:37,127 INFO    SenderThread:93981 [job_builder.py:build():281] Attempting to build job artifact
+2024-11-16 17:07:37,127 INFO    SenderThread:93981 [job_builder.py:_get_source_type():393] is repo sourced job
+2024-11-16 17:07:37,134 INFO    SenderThread:93981 [job_builder.py:build():369] adding wandb-job metadata file
+2024-11-16 17:07:37,151 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 9
+2024-11-16 17:07:37,151 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:37,151 DEBUG   SenderThread:93981 [sender.py:send():380] send: artifact
+2024-11-16 17:07:37,152 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 9
+2024-11-16 17:07:37,158 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: poll_exit
+2024-11-16 17:07:38,110 INFO    Thread-12 :93981 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/output.log
+2024-11-16 17:07:38,294 INFO    SenderThread:93981 [sender.py:send_artifact():1456] sent artifact job-https___github.com_hubertrybka_profis-2.git_train.py - {'id': 'QXJ0aWZhY3Q6MTMzNzg0NzY1Mg==', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjQ5NjM5NjkzNg==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6MTMzNzg0NzY1Mg==', 'versionIndex': 0}}}
+2024-11-16 17:07:38,295 DEBUG   SenderThread:93981 [sender.py:send_request():407] send_request: defer
+2024-11-16 17:07:38,295 INFO    SenderThread:93981 [sender.py:send_request_defer():609] handle sender defer: 9
+2024-11-16 17:07:38,295 INFO    SenderThread:93981 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-11-16 17:07:38,669 WARNING StreamThr :93981 [internal.py:is_dead():414] Internal process exiting, parent pid 93949 disappeared
+2024-11-16 17:07:38,669 ERROR   StreamThr :93981 [internal.py:wandb_internal():152] Internal process shutdown.
+2024-11-16 17:07:39,111 INFO    SenderThread:93981 [dir_watcher.py:finish():388] scan: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files
+2024-11-16 17:07:39,111 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/wandb-metadata.json wandb-metadata.json
+2024-11-16 17:07:39,111 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/requirements.txt requirements.txt
+2024-11-16 17:07:39,112 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/conda-environment.yaml conda-environment.yaml
+2024-11-16 17:07:39,113 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/output.log output.log
+2024-11-16 17:07:39,115 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/wandb-summary.json wandb-summary.json
+2024-11-16 17:07:39,116 INFO    SenderThread:93981 [dir_watcher.py:finish():402] scan save: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/config.yaml config.yaml
+2024-11-16 17:07:39,117 INFO    SenderThread:93981 [sender.py:transition_state():613] send defer: 10
+2024-11-16 17:07:39,117 INFO    SenderThread:93981 [sender.py:finish():1534] shutting down sender
+2024-11-16 17:07:39,118 INFO    SenderThread:93981 [file_pusher.py:finish():175] shutting down file pusher
+2024-11-16 17:07:39,119 INFO    SenderThread:93981 [file_pusher.py:join():181] waiting for file pusher
+2024-11-16 17:07:39,121 DEBUG   HandlerThread:93981 [handler.py:handle_request():144] handle_request: defer
+2024-11-16 17:07:39,121 INFO    HandlerThread:93981 [handler.py:handle_request_defer():170] handle defer: 10
+2024-11-16 17:07:39,121 INFO    HandlerThread:93981 [handler.py:finish():844] shutting down handler
+2024-11-16 17:07:39,121 INFO    WriterThread:93981 [datastore.py:close():294] close: /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/run-b9tr1s6r.wandb
+2024-11-16 17:07:39,523 INFO    wandb-upload_0:93981 [upload_job.py:push():131] Uploaded file /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/requirements.txt
+2024-11-16 17:07:39,600 INFO    wandb-upload_1:93981 [upload_job.py:push():131] Uploaded file /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/conda-environment.yaml
+2024-11-16 17:07:39,607 INFO    wandb-upload_2:93981 [upload_job.py:push():131] Uploaded file /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/output.log
+2024-11-16 17:07:39,608 INFO    wandb-upload_3:93981 [upload_job.py:push():131] Uploaded file /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/wandb-summary.json
+2024-11-16 17:07:39,608 INFO    wandb-upload_4:93981 [upload_job.py:push():131] Uploaded file /home/hubert/github/profis-2/wandb/run-20241116_170601-b9tr1s6r/files/config.yaml
+2024-11-16 17:07:40,120 INFO    SenderThread:93981 [file_stream.py:finish():595] file stream finish called
+2024-11-16 17:07:40,805 INFO    SenderThread:93981 [file_stream.py:finish():599] file stream finish is done
