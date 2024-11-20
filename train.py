@@ -255,7 +255,7 @@ torch.manual_seed(42)
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = Profis().to(device)
+model = Profis(fp_size=2048 if args.fp_type == 'ECFP' else 4860).to(device)
 model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=True)
 
 if os.path.exists('models') is False:
