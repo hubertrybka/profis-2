@@ -1,0 +1,99 @@
+{
+    "os": "Linux-6.8.0-49-generic-x86_64-with-glibc2.35",
+    "python": "3.11.5",
+    "heartbeatAt": "2024-11-21T18:18:26.254011",
+    "startedAt": "2024-11-21T18:18:25.162889",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--epochs",
+        "300",
+        "--batch_size",
+        "32",
+        "--lr",
+        "0.0001",
+        "--fp_type",
+        "ECFP",
+        "--name",
+        "profis2_ecfp_lr2e-4"
+    ],
+    "state": "running",
+    "program": "/home/hubert/github/profis-2/train.py",
+    "codePathLocal": "train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/hubertrybka/profis-2.git",
+        "commit": "364f5c7ae2c2ff43efc9de65a09a81c5b0a4b920"
+    },
+    "email": "hubert.rybka@doctoral.uj.edu.pl",
+    "root": "/home/hubert/github/profis-2",
+    "host": "hubert-ThinkPad-T480",
+    "username": "hubert",
+    "executable": "/home/hubert/miniconda3/envs/profis/bin/python",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 900.0169999999998,
+        "min": 400.0,
+        "max": 4200.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 899.893,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 899.988,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 900.014,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 900.009,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 900.007,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 899.986,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 900.112,
+            "min": 400.0,
+            "max": 4200.0
+        },
+        {
+            "current": 900.01,
+            "min": 400.0,
+            "max": 4200.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 467.8895797729492,
+            "used": 189.2299690246582
+        }
+    },
+    "gpu": "NVIDIA GeForce MX150",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce MX150",
+            "memory_total": 2147483648
+        }
+    ],
+    "memory": {
+        "total": 31.0972900390625
+    }
+}
