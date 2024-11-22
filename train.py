@@ -13,6 +13,7 @@ import argparse
 from tqdm import tqdm
 import os
 import math
+import time
 
 
 class Annealer:
@@ -234,7 +235,7 @@ def vae_loss(x_decoded_mean, y, z_mean, z_logvar):
 
 def is_valid(smiles):
     try:
-        Chem.MolFromSmiles(smiles)
+        Chem.MolFromSmiles(smiles, sanitize=True)
         return True
     except:
         return False
@@ -249,7 +250,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
     for epoch in range(1, epochs + 1):
 
         print(f'Epoch', epoch)
-
+        start_time = time.time()
         model.train()
         train_loss = 0
         mean_kld_loss = 0
@@ -276,7 +277,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
             X = X.to(device)
             y = y.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 50 == 0:
+            if batch_idx % 100 == 0:
                 print('Input:', decode_smiles_from_indexes(
                     y[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
@@ -293,6 +294,11 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
         mean_valid = len(valid_smiles) / len(val_out_smiles)
 
         wandb.log({'train_loss': train_loss, 'val_loss': val_loss, 'validity': mean_valid})
+        end_time = time.time()
+        print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
+
+        if epoch % 50 == 0:
+            torch.save(model.state_dict(), f'models/{args.name}_epoch_{epoch}.pt')
 
     return model
 
@@ -306,7 +312,6 @@ argparser.add_argument('--fp_type', type=str, default='ECFP',
                        help='Type of fingerprint to use (ECFP or KRFP)',
                        choices=['ECFP', 'KRFP'])
 argparser.add_argument('--name', type=str, default='profis')
-
 args = argparser.parse_args()
 
 wandb.init(project='profis2', name=args.name)
@@ -322,13 +327,11 @@ val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, s
 
 torch.manual_seed(42)
 
+if os.path.exists('models') is False:
+    os.makedirs('models')
+
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = Profis(fp_size=2048 if args.fp_type == 'ECFP' else 4860).to(device)
 model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
-
-if os.path.exists('models') is False:
-    os.makedirs('models')
-
-model.save(f'models/{args.name}.pt')
