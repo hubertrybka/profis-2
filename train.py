@@ -234,11 +234,10 @@ def vae_loss(x_decoded_mean, y, z_mean, z_logvar):
     return xent_loss, kl_loss
 
 def is_valid(smiles):
-    try:
-        Chem.MolFromSmiles(smiles, sanitize=True)
-        return True
-    except:
+    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
         return False
+    else:
+        return True
 
 def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
 
