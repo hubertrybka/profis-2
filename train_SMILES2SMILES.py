@@ -1,0 +1,305 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils.data
+import pandas as pd
+import numpy as np
+import torch.optim as optim
+from torch.utils.data import Dataset
+from rdkit import Chem
+import wandb
+import re
+import argparse
+from tqdm import tqdm
+import os
+import math
+import time
+
+
+class Annealer:
+    """
+    This class is used to anneal the KL divergence loss over the course of training VAEs.
+    After each call, the step() function should be called to update the current epoch.
+    """
+
+    def __init__(self, total_steps, shape, baseline=0.0, cyclical=False, disable=False):
+        """
+        Parameters:
+            total_steps (int): Number of epochs to reach full KL divergence weight.
+            shape (str): Shape of the annealing function. Can be 'linear', 'cosine', or 'logistic'.
+            baseline (float): Starting value for the annealing function [0-1]. Default is 0.0.
+            cyclical (bool): Whether to repeat the annealing cycle after total_steps is reached.
+            disable (bool): If true, the __call__ method returns unchanged input (no annealing).
+        """
+        self.total_steps = total_steps
+        self.current_step = 0
+        self.cyclical = cyclical
+        self.shape = shape
+        self.baseline = baseline
+        if disable:
+            self.shape = 'none'
+            self.baseline = 0.0
+
+    def __call__(self, kld):
+        """
+        Args:
+            kld (torch.tensor): KL divergence loss
+        Returns:
+            out (torch.tensor): KL divergence loss multiplied by the slope of the annealing function.
+        """
+        out = kld * self.slope()
+        return out
+
+    def slope(self):
+        if self.shape == 'linear':
+            y = (self.current_step / self.total_steps)
+        elif self.shape == 'cosine':
+            y = (math.cos(math.pi * (self.current_step / self.total_steps - 1)) + 1) / 2
+        elif self.shape == 'logistic':
+            exponent = ((self.total_steps / 2) - self.current_step)
+            y = 1 / (1 + math.exp(exponent))
+        elif self.shape == 'none':
+            y = 1.0
+        else:
+            raise ValueError('Invalid shape for annealing function. Must be linear, cosine, or logistic.')
+        y = self.add_baseline(y)
+        return y
+
+    def step(self):
+        if self.current_step < self.total_steps:
+            self.current_step += 1
+        if self.cyclical and self.current_step >= self.total_steps:
+            self.current_step = 0
+        return
+
+    def add_baseline(self, y):
+        y_out = y * (1 - self.baseline) + self.baseline
+        return y_out
+
+    def cyclical_setter(self, value):
+        if value is not bool:
+            raise ValueError('Cyclical_setter method requires boolean argument (True/False)')
+        else:
+            self.cyclical = value
+        return
+
+class Smiles2SmilesDataset(Dataset):
+    """
+    Dataset class for handling RNN training data.
+    Parameters:
+        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
+                           SMILES must be contained in ['smiles'] column as strings,
+                           fingerprints must be contained in ['fps'] column as lists
+                           of integers (dense vectors).
+    """
+
+    def __init__(self, df):
+        self.smiles = df["smiles"].values
+        self.charset = load_charset()
+        self.char2idx = {s: i for i, s in enumerate(self.charset)}
+
+    def __getitem__(self, idx):
+        """
+        Get item from dataset.
+        Args:
+            idx (int): index of item to get
+        Returns:
+            X (torch.Tensor): reconstructed fingerprint
+            y (torch.Tensor): vectorized SELFIES
+        """
+        raw_smile = self.smiles[idx]
+        vectorized_seq = self.vectorize(raw_smile)
+        if len(vectorized_seq) > 100:
+            vectorized_seq = vectorized_seq[:100]
+        return torch.from_numpy(vectorized_seq).float()
+
+    def __len__(self):
+        return len(self.smiles)
+
+
+    def vectorize(self, seq, pad_to_len=100):
+        splited = self.split(seq) + ["[nop]"] * (pad_to_len - len(self.split(seq)))
+        X = np.zeros((len(splited), len(self.charset)))
+
+        for i in range(len(splited)):
+            if splited[i] not in self.charset:
+                raise ValueError(
+                    f"Invalid token: {splited[i]}, allowed tokens: {self.charset}"
+                )
+            X[i, self.char2idx[splited[i]]] = 1
+        return X
+
+    def split(self, smile):
+        pattern = (
+            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
+        return re.findall(pattern, smile)
+
+def one_hot_array(i, n):
+    return map(int, [ix == i for ix in range(n)])
+
+def one_hot_index(vec, charset):
+    return map(charset.index, vec)
+
+def from_one_hot_array(vec):
+    oh = np.where(vec == 1)
+    if oh[0].shape == (0, ):
+        return None
+    return int(oh[0][0])
+
+def decode_smiles_from_indexes(vec, charset):
+    return "".join(map(lambda x: charset[x], vec)).strip()
+
+def load_charset(path='data/smiles_alphabet.txt'):
+    with open(path) as f:
+        charset = f.readlines()
+    charset = [char.strip() for char in charset]
+    return charset
+
+class Profis(nn.Module):
+    def __init__(self,
+                 latent_size=32,
+                 alphabet_size=len(load_charset())
+        ):
+        super(Profis, self).__init__()
+
+        self.conv_1 = nn.Conv1d(100, 9, kernel_size=9)
+        self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
+        self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
+        self.fc1 = nn.Linear(60, 435)
+        self.fc2 = nn.Linear(435, latent_size)
+        self.fc3 = nn.Linear(435, latent_size)
+
+        self.fc4 = nn.Linear(latent_size, 256)
+        self.gru = nn.GRU(256, 512, 3, batch_first=True)
+        self.fc5 = nn.Linear(512, alphabet_size)
+
+        self.relu = nn.ReLU()
+        self.selu = nn.SELU()
+        self.softmax = nn.Softmax(dim=1)
+
+    def encode(self, x):
+
+        x = self.relu(self.conv_1(x))
+        x = self.relu(self.conv_2(x))
+        x = self.relu(self.conv_3(x))
+        x = self.selu(self.fc1(x.view(x.size(0), -1)))
+        mu = self.relu(self.fc2(x))
+        logvar = self.relu(self.fc3(x))
+        return mu, logvar
+
+    def sampling(self, z_mean, z_logvar):
+        epsilon = 1e-2 * torch.randn_like(z_logvar)
+        return torch.exp(0.5 * z_logvar) * epsilon + z_mean
+
+    def decode(self, z):
+        z = self.selu(self.fc4(z))
+        z = z.view(z.size(0), 1, z.size(-1)).repeat(1, 100, 1)
+        output, hn = self.gru(z)
+        out_reshape = output.contiguous().view(-1, output.size(-1))
+        y0 = self.softmax(self.fc5(out_reshape))
+        y = y0.contiguous().view(output.size(0), -1, y0.size(-1))
+        return y
+
+    def forward(self, x):
+        z_mean, z_logvar = self.encode(x)
+        z = self.sampling(z_mean, z_logvar)
+        return self.decode(z), z_mean, z_logvar
+
+def vae_loss(x_decoded_mean, y, z_mean, z_logvar):
+    xent_loss = F.binary_cross_entropy(x_decoded_mean, y, reduction='mean')
+    kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
+    return xent_loss, kl_loss
+
+def is_valid(smiles):
+    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
+        return False
+    else:
+        return True
+
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
+
+    charset = load_charset()
+    annealer = Annealer(30, 'cosine', baseline=0.0)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    print('Using device:', device)
+
+    for epoch in range(1, epochs + 1):
+
+        print(f'Epoch', epoch)
+        start_time = time.time()
+        model.train()
+        train_loss = 0
+        mean_kld_loss = 0
+        for batch_idx, data in enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader):
+            X = data.to(device)
+            optimizer.zero_grad()
+            output, mean, logvar = model(X)
+            recon_loss, kld_loss = vae_loss(output, X, mean, logvar)
+            loss = recon_loss + annealer(kld_loss)
+            loss.backward()
+            train_loss += loss.item()
+            kld_loss += kld_loss.item()
+            optimizer.step()
+        train_loss /= len(train_loader)
+        mean_kld_loss /= len(train_loader)
+
+        model.eval()
+        val_loss = 0
+        val_outputs = []
+        for batch_idx, data in enumerate(val_loader):
+            X = data.to(device)
+            output, mean, logvar = model(X)
+            if batch_idx % 50 == 0:
+                print('Input:', decode_smiles_from_indexes(
+                    X[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
+                print('Output:', decode_smiles_from_indexes(
+                    output[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
+            loss, _ = vae_loss(output, X, mean, logvar)
+            val_loss += loss.item()
+            val_outputs.append(output.detach().cpu())
+        val_loss /= len(val_loader)
+        val_outputs = torch.cat(val_outputs, dim=0).numpy()
+        val_out_smiles = [decode_smiles_from_indexes(
+            out.argmax(axis=1), charset) for out in val_outputs]
+        val_out_smiles = [smile.replace('[nop]', '') for smile in val_out_smiles]
+        valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]
+        mean_valid = len(valid_smiles) / len(val_out_smiles)
+
+        wandb.log({'train_loss': train_loss, 'val_loss': val_loss, 'validity': mean_valid})
+        end_time = time.time()
+        print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
+
+        if epoch % 50 == 0:
+            torch.save(model.state_dict(), f'models/{args.name}_epoch_{epoch}.pt')
+
+    return model
+
+argparser = argparse.ArgumentParser()
+argparser.add_argument('--epochs', type=int, default=100,
+                       help='Number of epochs to train the model')
+argparser.add_argument('--batch_size', type=int, default=128)
+argparser.add_argument('--lr', type=float, default=0.001,
+                       help='Learning rate for the optimizer')
+argparser.add_argument('--name', type=str, default='profis')
+args = argparser.parse_args()
+
+wandb.init(project='profis2', name=args.name)
+
+train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet')
+test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet')
+data_train = Smiles2SmilesDataset(train_df)
+data_val = Smiles2SmilesDataset(test_df)
+train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=4)
+val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
+
+torch.manual_seed(42)
+
+if os.path.exists('models') is False:
+    os.makedirs('models')
+
+epochs = args.epochs
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+model = Profis().to(device)
+model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
