@@ -238,6 +238,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
             recon_loss, kld_loss = vae_loss(output, X, mean, logvar)
             loss = recon_loss + annealer(kld_loss)
             loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
             kld_loss += kld_loss.item()
             optimizer.step()
