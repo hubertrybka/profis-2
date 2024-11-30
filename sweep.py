@@ -1,10 +1,10 @@
 import torch
+import torch.nn as nn
 import torch.utils.data
 import pandas as pd
 import torch.optim as optim
 from rdkit import Chem
 import wandb
-import argparse
 from tqdm import tqdm
 import os
 import time
@@ -42,6 +42,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
             loss.backward()
             train_loss += loss.item()
             kld_loss += kld_loss.item()
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
         train_loss /= len(train_loader)
         mean_kld_loss /= len(train_loader)
@@ -74,42 +75,55 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
         end_time = time.time()
         print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
 
-        if epoch % 50 == 0:
-            torch.save(model.state_dict(), f'models/{args.name}_epoch_{epoch}.pt')
+        #if epoch % 50 == 0:
+        #    torch.save(model.state_dict(), f'models/{name}/epoch_{epoch}.pt')
 
     return model
 
-argparser = argparse.ArgumentParser()
-argparser.add_argument('--epochs', type=int, default=100,
-                       help='Number of epochs to train the model')
-argparser.add_argument('--batch_size', type=int, default=128)
-argparser.add_argument('--lr', type=float, default=0.001,
-                       help='Learning rate for the optimizer')
-argparser.add_argument('--fp_type', type=str, default='ECFP',
-                       help='Type of fingerprint to use (ECFP or KRFP)',
-                       choices=['ECFP', 'KRFP'])
-argparser.add_argument('--name', type=str, default='profis')
-args = argparser.parse_args()
+def main():
+    train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet')
+    test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet')
 
-wandb.init(project='profis2', name=args.name)
+    wandb.init(project="profis2-sweep")
 
-train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet' if args.fp_type == 'ECFP' else
-                           'data/RNN_dataset_KRFP_train_90.parquet')
-test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if args.fp_type == 'ECFP' else
-                          'data/RNN_dataset_KRFP_val_10.parquet')
+    data_train = ProfisDataset(train_df, fp_len=2048)
+    data_val = ProfisDataset(test_df, fp_len=2048)
+    train_loader = torch.utils.data.DataLoader(data_train, batch_size=512, shuffle=True, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(data_val, batch_size=512, shuffle=False, num_workers=4)
 
-data_train = ProfisDataset(train_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
-data_val = ProfisDataset(test_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
-train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=4)
-val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    torch.manual_seed(42)
 
-torch.manual_seed(42)
+    if os.path.exists('models') is False:
+        os.makedirs('models')
 
-if os.path.exists('models') is False:
-    os.makedirs('models')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-epochs = args.epochs
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = Profis(fp_size=2048,
+                   dropout=wandb.config.dropout,
+                   fc1_size=wandb.config.fc1_size,
+                   fc2_size=wandb.config.fc2_size,
+                   hidden_size=wandb.config.hidden_size,
+                   eps_coef=wandb.config.eps_coef
+                   ).to(device)
+    model = train(model, train_loader, val_loader, epochs=500, device='cuda', lr=0.0002, print_progress=True)
 
-model = Profis(fp_size=2048 if args.fp_type == 'ECFP' else 4860).to(device)
-model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
+sweep_config = {
+    "method": "bayes",
+    "name": "profis_sweep",
+    "metric": {"goal": "maximize", "name": "validity"},
+    "parameters": {
+        "dropout": {"values": [0, 0.1, 0.2, 0.3]},
+        "fc1_size": {"distribution": "int_uniform", "min": 256, "max": 2048},
+        "fc2_size": {"distribution": "int_uniform", "min": 256, "max": 2048},
+        "hidden_size": {"distribution": "int_uniform", "min": 256, "max": 1024},
+        "eps_coef": {"values": [1, 0.1, 0.01]},
+    },
+    "early_terminate": {
+        "type": "hyperband",
+        "eta": 1.2,
+        "min_iter": 100
+    }
+}
+
+sweep_id = wandb.sweep(sweep=sweep_config, project="profis2-sweep")
+wandb.agent(sweep_id, function=main, count=100)
