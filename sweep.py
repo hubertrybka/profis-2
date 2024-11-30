@@ -8,8 +8,9 @@ import wandb
 from tqdm import tqdm
 import os
 import time
-from profis.utils import decode_smiles_from_indexes, ProfisDataset, Annealer, load_charset
+from profis.utils import ProfisDataset, Annealer, load_charset
 from profis.net import Profis, vae_loss
+from profis.dataset import decode_smiles_from_indexes
 
 def is_valid(smiles):
     if Chem.MolFromSmiles(smiles, sanitize=True) is None:
@@ -120,8 +121,8 @@ sweep_config = {
     },
     "early_terminate": {
         "type": "hyperband",
-        "eta": 1.2,
-        "min_iter": 100
+        "eta": 1.5,
+        "min_iter": 50
     }
 }
 

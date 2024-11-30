@@ -27,6 +27,4 @@ I
 6
 7
 8
-[end]
 [nop]
-[start]

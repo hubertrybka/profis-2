@@ -2,25 +2,40 @@ import torch
 import torch.utils.data
 import pandas as pd
 import torch.optim as optim
-from rdkit import Chem
 import wandb
-import argparse
+import configparser
 from tqdm import tqdm
+import argparse
 import os
 import time
-from profis.utils import decode_smiles_from_indexes, ProfisDataset, Annealer, load_charset
-from profis.net import Profis, vae_loss
+from profis.utils import Annealer, load_charset, initialize_profis, is_valid
+from profis.net import vae_loss
+from profis.dataset import ProfisDataset, decode_smiles_from_indexes
 
-def is_valid(smiles):
-    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
-        return False
-    else:
-        return True
-
-def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
+def train(model,
+          train_loader,
+          val_loader,
+          annealer,
+          epochs=100,
+          device='cpu',
+          lr=0.0001,
+          name='profis',
+          print_progress=False):
+    """
+    Train the model
+    :param model:
+    :param train_loader:
+    :param val_loader:
+    :param annealer:
+    :param epochs:
+    :param device:
+    :param lr:
+    :param name:
+    :param print_progress:
+    :return:
+    """
 
     charset = load_charset()
-    annealer = Annealer(30, 'cosine', baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
 
@@ -75,41 +90,67 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001,
         print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
 
         if epoch % 50 == 0:
-            torch.save(model.state_dict(), f'models/{args.name}_epoch_{epoch}.pt')
+            torch.save(model.state_dict(), f'models/{name}/epoch_{epoch}.pt')
 
     return model
 
-argparser = argparse.ArgumentParser()
-argparser.add_argument('--epochs', type=int, default=100,
-                       help='Number of epochs to train the model')
-argparser.add_argument('--batch_size', type=int, default=128)
-argparser.add_argument('--lr', type=float, default=0.001,
-                       help='Learning rate for the optimizer')
-argparser.add_argument('--fp_type', type=str, default='ECFP',
-                       help='Type of fingerprint to use (ECFP or KRFP)',
-                       choices=['ECFP', 'KRFP'])
-argparser.add_argument('--name', type=str, default='profis')
-args = argparser.parse_args()
+if __name__ == "__main__":
 
-wandb.init(project='profis2', name=args.name)
+    # Parse the path to the config file
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--config', '-c', type=str, default='config_files/RNN_config.ini')
+    args = argparser.parse_args()
 
-train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet' if args.fp_type == 'ECFP' else
-                           'data/RNN_dataset_KRFP_train_90.parquet')
-test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if args.fp_type == 'ECFP' else
-                          'data/RNN_dataset_KRFP_val_10.parquet')
+    # Read the config file
+    parser = configparser.ConfigParser()
+    parser.read(args.config)
 
-data_train = ProfisDataset(train_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
-data_val = ProfisDataset(test_df, fp_len=2048 if args.fp_type == 'ECFP' else 4860)
-train_loader = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=4)
-val_loader = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    # Initialize wandb
+    wandb.init(project='profis2', name=parser['RUN']['run_name'])
 
-torch.manual_seed(42)
+    # Load the data and create the dataloaders
+    fp_type = parser['MODEL']['fp_type']
+    train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet' if fp_type == 'ECFP4' else
+                               'data/RNN_dataset_KRFP_train_90.parquet')
+    test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if fp_type == 'ECFP4' else
+                              'data/RNN_dataset_KRFP_val_10.parquet')
+    data_train = ProfisDataset(train_df, fp_len=int(parser['MODEL']['fp_len']))
+    data_val = ProfisDataset(test_df, fp_len=int(parser['MODEL']['fp_len']))
+    train_loader = torch.utils.data.DataLoader(data_train,
+                                               batch_size=int(parser['RUN']['batch_size']),
+                                               shuffle=True, num_workers=int(parser['RUN']['num_workers']))
+    val_loader = torch.utils.data.DataLoader(data_val,
+                                             batch_size=int(parser['RUN']['batch_size']),
+                                             shuffle=False, num_workers=int(parser['RUN']['num_workers']))
+    torch.manual_seed(42)
 
-if os.path.exists('models') is False:
-    os.makedirs('models')
+    # Create a directory to save the models to
+    if os.path.exists('models') is False:
+        os.makedirs('models')
+    model_name = parser['RUN']['run_name']
+    if os.path.exists(f'models/{model_name}') is False:
+        os.makedirs(f'models/{model_name}')
+    else:
+        raise ValueError(f'Model directory of the name {model_name} already exists')
 
-epochs = args.epochs
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # Dump the config file to the model directory
+    with open(f'models/{model_name}/config.ini', 'w') as f:
+        parser.write(f)
 
-model = Profis(fp_size=2048 if args.fp_type == 'ECFP' else 4860).to(device)
-model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
+    # Initialize the annealing agent
+    annealer = Annealer(int(parser['RUN']['annealing_max_epoch']), parser['RUN']['annealing_shape'], baseline=0.0,
+                        disable=parser['RUN'].getboolean('disable_annealing'))
+
+    # Initialize the model
+    device = ('cuda' if torch.cuda.is_available() else 'cpu') if parser['RUN'].getboolean('use_cuda') else 'cpu'
+    model = initialize_profis(args.config)
+    model.to(device)
+
+    model = train(model=model,
+                  train_loader=train_loader,
+                  val_loader=val_loader,
+                  epochs=int(parser['RUN']['epochs']),
+                  annealer=annealer,
+                  device=device,
+                  lr=float(parser['RUN']['learn_rate']),
+                  print_progress=False)

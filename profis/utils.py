@@ -1,8 +1,16 @@
 import math
-import re
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from configparser import ConfigParser
+from profis.dataset import ProfisDataset, load_charset
+from profis.net import Profis
+from rdkit import Chem
+import pandas as pd
+from rdkit.Chem import AllChem
+from rdkit.Chem import QED
+from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
+from torch.utils.data import DataLoader
+
 
 class Annealer:
     """
@@ -71,152 +79,208 @@ class Annealer:
             self.cyclical = value
         return
 
-class ProfisDataset(Dataset):
+def initialize_profis(config_path):
+    config = ConfigParser()
+    config.read(config_path)
+    model = Profis(
+        fp_size=int(config["MODEL"]["fp_len"]),
+        fc1_size=int(config["MODEL"]["fc1_size"]),
+        fc2_size=int(config["MODEL"]["fc2_size"]),
+        hidden_size=int(config["MODEL"]["hidden_size"]),
+        latent_size=int(config["MODEL"]["latent_size"]),
+        gru_layers=int(config["MODEL"]["gru_layers"]),
+        eps_coef=float(config["MODEL"]["eps_coef"]),
+        dropout=float(config["MODEL"]["dropout"]),
+        alphabet_size=len(load_charset()))
+    return model
+
+
+def is_valid(smiles):
     """
-    Dataset class for handling RNN training data.
-    Parameters:
-        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
-                           SMILES must be contained in ['smiles'] column as strings,
-                           fingerprints must be contained in ['fps'] column as lists
-                           of integers (dense vectors).
-        vectorizer: vectorizer object instantiated from vectorizer.py
-        fp_len (int): length of fingerprint
+    Check if a SMILES string is valid
+    :param smiles: SMILES string
+    :return: True if valid, False otherwise
     """
+    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
+        return False
+    else:
+        return True
 
-    def __init__(self, df, fp_len=4860, smiles_enum=False):
-        self.smiles = df["smiles"]
-        self.fps = df["fps"]
-        self.fps = self.prepare_X(self.fps)
-        self.smiles = self.prepare_y(self.smiles)
-        self.fp_len = fp_len
-        self.smiles_enum = smiles_enum
-        self.charset = load_charset()
-        self.char2idx = {s: i for i, s in enumerate(self.charset)}
-
-    def __getitem__(self, idx):
-        """
-        Get item from dataset.
-        Args:
-            idx (int): index of item to get
-        Returns:
-            X (torch.Tensor): reconstructed fingerprint
-            y (torch.Tensor): vectorized SELFIES
-        """
-        raw_smile = self.smiles[idx]
-        vectorized_seq = self.vectorize(raw_smile)
-        if len(vectorized_seq) > 100:
-            vectorized_seq = vectorized_seq[:100]
-        raw_X = self.fps[idx]
-        X = np.array(raw_X, dtype=int)
-        X_reconstructed = self.reconstruct_fp(X)
-        return (
-            torch.from_numpy(X_reconstructed).float(),
-            torch.from_numpy(vectorized_seq).float(),
-        )
-
-    def __len__(self):
-        return len(self.fps)
-
-    def reconstruct_fp(self, fp):
-        fp_rec = np.zeros(self.fp_len)
-        fp_rec[fp] = 1
-        return fp_rec
-
-    def prepare_X(self, fps):
-        fps = fps.apply(lambda x: np.array(x, dtype=int))
-        return fps.values
-
-    @staticmethod
-    def prepare_y(seq):
-        return seq.values
-
-    def vectorize(self, seq, pad_to_len=100):
-        splited = self.split(seq) + ["[nop]"] * (pad_to_len - len(self.split(seq)))
-        X = np.zeros((len(splited), len(self.charset)))
-
-        for i in range(len(splited)):
-            if splited[i] not in self.charset:
-                raise ValueError(
-                    f"Invalid token: {splited[i]}, allowed tokens: {self.charset}"
-                )
-            X[i, self.char2idx[splited[i]]] = 1
-        return X
-
-    def split(self, smile):
-        pattern = (
-            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
-            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
-        return re.findall(pattern, smile)
-
-class Smiles2SmilesDataset(Dataset):
+def KRFP_score(mol, fp: torch.Tensor):
     """
-    Dataset class for handling RNN training data.
-    Parameters:
-        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
-                           SMILES must be contained in ['smiles'] column as strings,
-                           fingerprints must be contained in ['fps'] column as lists
-                           of integers (dense vectors).
+    Calculates the KRFP fingerprint reconstruction score for a molecule
+    Args:
+        mol: rdkit mol object
+        fp: torch tensor of size (fp_len)
+    Returns:
+        score: float (0-1)
     """
-
-    def __init__(self, df):
-        self.smiles = df["smiles"].values
-        self.charset = load_charset()
-        self.char2idx = {s: i for i, s in enumerate(self.charset)}
-
-    def __getitem__(self, idx):
-        """
-        Get item from dataset.
-        Args:
-            idx (int): index of item to get
-        Returns:
-            X (torch.Tensor): reconstructed fingerprint
-            y (torch.Tensor): vectorized SELFIES
-        """
-        raw_smile = self.smiles[idx]
-        vectorized_seq = self.vectorize(raw_smile)
-        if len(vectorized_seq) > 100:
-            vectorized_seq = vectorized_seq[:100]
-        return torch.from_numpy(vectorized_seq).float()
-
-    def __len__(self):
-        return len(self.smiles)
+    score = 0
+    key = pd.read_csv("data/KlekFP_keys.txt", header=None)
+    fp_len = fp.shape[0]
+    for i in range(fp_len):
+        if fp[i] == 1:
+            frag = Chem.MolFromSmarts(key.iloc[i].values[0])
+            score += mol.HasSubstructMatch(frag)
+    return score / torch.sum(fp).item()
 
 
-    def vectorize(self, seq, pad_to_len=100):
-        splited = self.split(seq) + ["[nop]"] * (pad_to_len - len(self.split(seq)))
-        X = np.zeros((len(splited), len(self.charset)))
+def ECFP_score(mol, fp: torch.Tensor):
+    """
+    Calculates the ECFP fingerprint reconstruction score for a molecule
+    Args:
+        mol: rdkit mol object
+        fp: torch tensor of size (fp_len)
+    Returns:
+        score: float (0-1)
+    """
+    score = 0
+    fp_len = fp.shape[0]
+    ECFP_reconstructed = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=fp_len)
+    for i in range(fp_len):
+        if ECFP_reconstructed[i] and fp[i]:
+            score += 1
+    return score / torch.sum(fp).item()
 
-        for i in range(len(splited)):
-            if splited[i] not in self.charset:
-                raise ValueError(
-                    f"Invalid token: {splited[i]}, allowed tokens: {self.charset}"
-                )
-            X[i, self.char2idx[splited[i]]] = 1
-        return X
 
-    def split(self, smile):
-        pattern = (
-            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
-            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
-        return re.findall(pattern, smile)
+def try_QED(mol):
+    """
+    Tries to calculate the QED score for a molecule
+    Args:
+        mol: rdkit mol object
+    Returns:
+        qed: float
+    """
+    try:
+        qed = QED.qed(mol)
+    except:
+        qed = 0
+    return qed
 
-def one_hot_array(i, n):
-    return map(int, [ix == i for ix in range(n)])
+def smiles2sparse_KRFP(smiles):
+    """
+    Convert SMILES string to sparse Klekota&Roth fingerprint
+    Args:
+        smiles (str): SMILES string
+    Returns:
+        np.array: sparse fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    keys = "data/KlekFP_keys.txt"
+    klek_keys = [line.strip() for line in open(keys)]
+    klek_keys_mols = list(map(Chem.MolFromSmarts, klek_keys))
+    fp_list = []
+    for i, key in enumerate(klek_keys_mols):
+        if mol.HasSubstructMatch(key):
+            fp_list.append(1)
+        else:
+            fp_list.append(0)
+    return np.array(fp_list)
 
-def one_hot_index(vec, charset):
-    return map(charset.index, vec)
 
-def from_one_hot_array(vec):
-    oh = np.where(vec == 1)
-    if oh[0].shape == (0, ):
-        return None
-    return int(oh[0][0])
+def smiles2dense_KRFP(smiles):
+    """
+    Convert SMILES string to dense Klekota&Roth fingerprint
+    Args:
+        smiles (str): SMILES string
+    Returns:
+        np.array: dense fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    keys = "data/KlekFP_keys.txt"
+    klek_keys = [line.strip() for line in open(keys)]
+    klek_keys_mols = list(map(Chem.MolFromSmarts, klek_keys))
+    fp_list = []
+    for i, key in enumerate(klek_keys_mols):
+        if mol.HasSubstructMatch(key):
+            fp_list.append(i)
+    return np.array(fp_list)
 
-def decode_smiles_from_indexes(vec, charset):
-    return "".join(map(lambda x: charset[x], vec)).strip()
 
-def load_charset(path='data/smiles_alphabet.txt'):
-    with open(path) as f:
-        charset = f.readlines()
-    charset = [char.strip() for char in charset]
-    return charset
+def sparse2dense(sparse, return_numpy=True):
+    """
+    Convert sparse fingerprint to dense fingerprint
+    Args:
+        sparse (np.array): sparse fingerprint
+        return_numpy (bool): whether to return numpy array or list
+    Returns:
+        dense (np.array): dense fingerprint
+    """
+    dense = []
+    for idx, value in enumerate(sparse):
+        if value == 1:
+            dense.append(idx)
+    if return_numpy:
+        return np.array(dense)
+    else:
+        return dense
+
+
+def dense2sparse(dense, fp_len=4860):
+    """
+    Convert dense fingerprint to sparse fingerprint
+    Args:
+        dense (np.array): dense fingerprint
+        fp_len (int): length of the fingerprint
+    Returns:
+        sparse (np.array): sparse fingerprint
+    """
+    sparse = np.zeros(fp_len, dtype=np.int8)
+    for value in dense:
+        sparse[value] = 1
+    return np.array(sparse)
+
+
+def encode(df, model, device, batch=1024):
+    """
+    Encode a dataframe of SMILES strings into latent space vectors
+    :param df:
+    :param model:
+    :param device:
+    :param batch:
+    :return:
+    """
+    dataset = ProfisDataset(df, fp_len=model.fp_size)
+    dataloader = DataLoader(dataset, batch_size=batch, shuffle=False)
+    mus = []
+    logvars = []
+    model.eval()
+    model.to(device)
+    with torch.no_grad():
+        for batch in dataloader:
+            X, _ = batch.to(device)
+            mu, logvar = model.encoder(X)
+            mus.append(mu.cpu().numpy())
+            logvars.append(logvar.cpu().numpy())
+
+        mus = np.concatenate(mus, axis=0)
+        logvars = np.concatenate(logvars, axis=0)
+    return mus, logvars
+
+
+def smiles2sparse_ECFP(smiles, n_bits=2048):
+    """
+    Convert SMILES string to sparse ECFP fingerprint
+    Args:
+        smiles (str): SMILES string
+        n_bits (int): number of bits in the fingerprint
+    Returns:
+        np.array: sparse fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
+    return np.array(fp)
+
+
+def smiles2dense_ECFP(smiles, n_bits=2048):
+    """
+    Convert SMILES string to dense ECFP fingerprint
+    Args:
+        smiles (str): SMILES string
+        n_bits (int): number of bits in the fingerprint
+    Returns:
+        np.array: dense fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
+    return sparse2dense(fp)

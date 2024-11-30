@@ -1,4 +1,3 @@
-from profis.utils import load_charset
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +6,7 @@ import torch.nn.functional as F
 class MolecularVAE(nn.Module):
     def __init__(self,
                  latent_size=32,
-                 alphabet_size=len(load_charset())
+                 alphabet_size=30
         ):
         super(MolecularVAE, self).__init__()
 
@@ -68,7 +67,7 @@ class Profis(nn.Module):
                  gru_layers=3,
                  eps_coef=1e-2,
                  dropout=0,
-                 alphabet_size=len(load_charset())
+                 alphabet_size=30
         ):
         super(Profis, self).__init__()
 

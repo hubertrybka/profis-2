@@ -1,0 +1,1 @@
+{"n_estimators": [100, 250, 500, 1000], "max_features": ["sqrt", "log2", null], "max_depth": [3, 6, 9, null], "max_leaf_nodes": [6, 9, 12, 18]}
