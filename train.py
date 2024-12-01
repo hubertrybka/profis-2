@@ -11,9 +11,7 @@ import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
 from profis.net import vae_loss
 from profis.dataset import ProfisDataset
-
-def decode_smiles_from_indexes(vec, charset):
-    return "".join(map(lambda x: charset[x], vec)).strip()
+from profis.dataset import decode_smiles_from_indexes
 
 def train(model,
           train_loader,
