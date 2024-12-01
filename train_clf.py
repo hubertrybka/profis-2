@@ -19,7 +19,7 @@ from profis.clf import nested_CV
 
 def main(config_path, verbose=True):
     """
-    Trains an SVM classifier on the latent embeddings of the known ligands.
+    Trains a QSAR classifier on the latent embeddings of the known ligands.
     Args:
         config_path (str): path to the config file
         verbose (bool): whether to print the progress
