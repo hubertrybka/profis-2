@@ -171,19 +171,3 @@ class LatentEncoderDataset(Dataset):
     def prepare_X(fps):
         fps = fps.apply(lambda x: np.array(x, dtype=int))
         return fps
-
-
-def one_hot_array(i, n):
-    return map(int, [ix == i for ix in range(n)])
-
-def one_hot_index(vec, charset):
-    return map(charset.index, vec)
-
-def from_one_hot_array(vec):
-    oh = np.where(vec == 1)
-    if oh[0].shape == (0, ):
-        return None
-    return int(oh[0][0])
-
-def decode_smiles_from_indexes(vec, charset):
-    return "".join(map(lambda x: charset[x], vec)).strip()
