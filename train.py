@@ -10,7 +10,10 @@ import os
 import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
 from profis.net import vae_loss
-from profis.dataset import ProfisDataset, decode_smiles_from_indexes
+from profis.dataset import ProfisDataset
+
+def decode_smiles_from_indexes(vec, charset):
+    return "".join(map(lambda x: charset[x], vec)).strip()
 
 def train(model,
           train_loader,
@@ -69,7 +72,7 @@ def train(model,
             X = X.to(device)
             y = y.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 100 == 0:
+            if batch_idx % 50 == 0:
                 print('Input:', decode_smiles_from_indexes(
                     y[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
@@ -154,4 +157,5 @@ if __name__ == "__main__":
                   annealer=annealer,
                   device=device,
                   lr=float(parser['RUN']['learn_rate']),
+                  name=model_name,
                   print_progress=False)
