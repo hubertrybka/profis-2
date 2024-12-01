@@ -106,7 +106,7 @@ def main():
                    hidden_size=wandb.config.hidden_size,
                    eps_coef=wandb.config.eps_coef
                    ).to(device)
-    model = train(model, train_loader, val_loader, epochs=500, device='cuda', lr=0.0002, print_progress=True)
+    model = train(model, train_loader, val_loader, epochs=200, device='cuda', lr=0.0008, print_progress=False)
 
 sweep_config = {
     "method": "bayes",
@@ -122,7 +122,7 @@ sweep_config = {
     "early_terminate": {
         "type": "hyperband",
         "eta": 1.5,
-        "min_iter": 50
+        "min_iter": 40
     }
 }
 
