@@ -90,6 +90,7 @@ def train(model,
         print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
 
         if epoch % 50 == 0:
+            # save the model
             torch.save(model.state_dict(), f'models/{name}/epoch_{epoch}.pt')
 
     return model
