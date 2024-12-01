@@ -3,8 +3,7 @@ import argparse
 import rdkit.Chem as Chem
 import os
 import rdkit.Chem.MolStandardize.rdMolStandardize as rdMolStandardize
-from profis.utils import sparse2dense, smiles2sparse_KRFP, smiles2sparse_ECFP
-from profis.utils.vectorizer import SMILESVectorizer
+from profis.utils import sparse2dense, smiles2sparse_KRFP, smiles2sparse_ECFP, load_charset
 
 
 def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
@@ -43,10 +42,7 @@ def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
     df = df.dropna(subset=["smiles"])
 
     # Check for compatibility with the model's token alphabet
-    vectorizer = SMILESVectorizer()
-    df["is_compatible"] = df["smiles"].apply(
-        check_if_alphabet_compatibile, vectorizer=vectorizer
-    )
+    df["is_compatible"] = df["smiles"].apply(check_if_alphabet_compatibile)
     df = df[df["is_compatible"]]
 
     # Generate fingerprints
@@ -85,17 +81,19 @@ def try_standardize_smiles(smiles):
     return Chem.MolToSmiles(uncharged_mol)
 
 
-def check_if_alphabet_compatibile(smiles, vectorizer):
+def check_if_alphabet_compatibile(smiles):
     """
     Check if the SMILES string is compatible with the model's token alphabet.
     Args:
         smiles (str): SMILES string.
-        vectorizer (SMILESVectorizer): SMILES vectorizer.
     Returns:
         bool: True if the SMILES string is compatible, False otherwise.
     """
+    charset = load_charset()
     try:
-        vectorizer.vectorize(smiles)
+        for char in smiles:
+            if char not in charset:
+                return
     except ValueError:
         return False
     return True
