@@ -11,7 +11,7 @@ import pandas as pd
 from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
 
 from profis.clf import SKLearnScorer
-from profis.clf import SCAvgMeasure
+from profis.applicability import SCAvgMeasure
 
 
 # suppress scikit-learn warnings
@@ -32,34 +32,16 @@ def bayesian_search(job_package):
     """
 
     # unpack job package
-    n_samples, config, bounds_path = job_package
+    n_samples, config = job_package
 
     # read config file
     latent_size = int(config["SEARCH"]["latent_size"])
-    n_init = int(config["SEARCH"]["n_init"])
-    n_iter = int(config["SEARCH"]["n_iter"])
     verbosity = int(config["SEARCH"]["verbosity"])
-    if bounds_path is not None:
-        bounds = pd.read_csv(bounds_path)
-        means = bounds["mean"].to_numpy()
-        stds = bounds["std"].to_numpy()
-        pbounds = {
-            str(p): (means[p] - 2 * stds[p], means[p] + 2 * stds[p])
-            for p in range(latent_size)
-        }
-        pbounds_sizes = np.array(
-            [pbounds[str(p)][1] - pbounds[str(p)][0] for p in range(latent_size)]
-        )
-        min_window = pbounds_sizes.min() * 0.1
-        print("Min window: ", min_window) if verbosity > 0 else None
-    else:
-        bounds = config["SEARCH"]["bounds"]
-        pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
-        min_window = 0.1 * bounds
-
+    bounds = config["SEARCH"]["bounds"]
+    pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
+    min_window = float(config["SEARCH"]["min_window"]) * bounds
     worker_id = int(mp.current_process().name.split("-")[-1])
-    print(f"(mp debug) Worker {worker_id} started and will generate {n_samples} samples ") if verbosity > 0 else None
-
+    print(f"(mp debug) Worker {worker_id} will generate {n_samples} samples ") if verbosity > 0 else None
 
     # initialize scorer
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
@@ -82,8 +64,8 @@ def bayesian_search(job_package):
             bounds_transformer=bounds_transformer,
         )
         optimizer.maximize(
-            init_points=n_init,
-            n_iter=n_iter,
+            init_points=int(config["SEARCH"]["n_init"]),
+            n_iter=int(config["SEARCH"]["n_iter"]),
         )
         vector = np.array(list(optimizer.max["params"].values()))
         score_list.append(float(optimizer.max["target"]))
@@ -134,8 +116,6 @@ if __name__ == "__main__":
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
     n_samples = int(config["SEARCH"]["n_samples"])
-    n_init = int(config["SEARCH"]["n_init"])
-    n_iter = int(config["SEARCH"]["n_iter"])
     bounds = config["SEARCH"]["bounds"]
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
@@ -222,8 +202,8 @@ if __name__ == "__main__":
             f"model_path: {model_path}",
             f"latent_size: {latent_size}",
             f"n_samples: {n_samples}",
-            f"init_points: {n_init}",
-            f"n_iter: {n_iter}",
+            f"init_points: {int(config['SEARCH']['n_init'])}",
+            f"n_iter: {int(config['SEARCH']['n_init'])}",
             f"bounds: {bounds}",
             f"verbosity: {verbosity}",
             f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} s",
