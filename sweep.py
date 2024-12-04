@@ -18,7 +18,7 @@ def is_valid(smiles):
     else:
         return True
 
-def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0002, print_progress=False):
 
     charset = load_charset()
     annealer = Annealer(30, 'cosine', baseline=0.0)
@@ -104,20 +104,20 @@ def main():
                    fc1_size=wandb.config.fc1_size,
                    fc2_size=wandb.config.fc2_size,
                    hidden_size=wandb.config.hidden_size,
-                   eps_coef=wandb.config.eps_coef
+                   gru_layers=wandb.config.gru_layers,
                    ).to(device)
-    model = train(model, train_loader, val_loader, epochs=200, device='cuda', lr=0.0008, print_progress=False)
+    model = train(model, train_loader, val_loader, epochs=200, device='cuda', lr=0.0002, print_progress=False)
 
 sweep_config = {
     "method": "bayes",
     "name": "profis_sweep",
     "metric": {"goal": "maximize", "name": "validity"},
     "parameters": {
-        "dropout": {"values": [0, 0.1, 0.2, 0.3]},
-        "fc1_size": {"distribution": "int_uniform", "min": 256, "max": 2048},
-        "fc2_size": {"distribution": "int_uniform", "min": 256, "max": 2048},
-        "hidden_size": {"distribution": "int_uniform", "min": 256, "max": 1024},
-        "eps_coef": {"values": [1, 0.1, 0.01]},
+        "dropout": {"distribution": "uniform", "max": 0.5, "min": 0},
+        "fc1_size": {"distribution": "int_uniform", "max": 2048, "min": 256},
+        "fc2_size": {"distribution": "int_uniform", "max": 2048, "min": 256},
+        "hidden_size": {"distribution": "int_uniform", "max": 1024, "min": 128},
+        "gru_layers": {"values": [1, 2, 3]},
     },
     "early_terminate": {
         "type": "hyperband",
