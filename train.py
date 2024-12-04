@@ -108,7 +108,7 @@ if __name__ == "__main__":
     parser.read(args.config)
 
     # Initialize wandb
-    wandb.init(project='profis2', name=parser['RUN']['run_name'])
+    wandb.init(project='profis2', name=parser['RUN']['run_name'], config=parser)
 
     # Load the data and create the dataloaders
     fp_type = parser['MODEL']['fp_type']

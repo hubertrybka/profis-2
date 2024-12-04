@@ -9,7 +9,8 @@ import argparse
 from tqdm import tqdm
 import os
 import time
-from profis.utils import load_charset, Annealer, decode_smiles_from_indexes, Smiles2SmilesDataset
+from profis.dataset import load_charset, decode_smiles_from_indexes, Smiles2SmilesDataset
+from profis.utils import Annealer
 from profis.net import MolecularVAE, vae_loss
 
 def is_valid(smiles):
@@ -18,7 +19,7 @@ def is_valid(smiles):
     else:
         return True
 
-def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0001, print_progress=False):
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004, print_progress=False):
 
     charset = load_charset()
     annealer = Annealer(30, 'cosine', baseline=0.0)
@@ -81,9 +82,10 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument('--epochs', type=int, default=100,
                        help='Number of epochs to train the model')
 argparser.add_argument('--batch_size', type=int, default=128)
-argparser.add_argument('--lr', type=float, default=0.001,
+argparser.add_argument('--lr', type=float, default=0.0001,
                        help='Learning rate for the optimizer')
 argparser.add_argument('--name', type=str, default='profis')
+argparser.add_argument('--eps_coef', type=float, default=0.01)
 args = argparser.parse_args()
 
 wandb.init(project='profis2', name=args.name)
