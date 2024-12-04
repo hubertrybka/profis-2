@@ -105,5 +105,5 @@ if os.path.exists('models') is False:
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = MolecularVAE().to(device)
+model = MolecularVAE(dropout=0.2).to(device)
 model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
