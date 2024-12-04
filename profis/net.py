@@ -6,7 +6,9 @@ import torch.nn.functional as F
 class MolecularVAE(nn.Module):
     def __init__(self,
                  latent_size=32,
-                 alphabet_size=30
+                 alphabet_size=30,
+                 dropout=0,
+                 eps_coef=1e-2
         ):
         super(MolecularVAE, self).__init__()
 
@@ -18,9 +20,10 @@ class MolecularVAE(nn.Module):
         self.fc3 = nn.Linear(435, latent_size)
 
         self.fc4 = nn.Linear(latent_size, 256)
-        self.gru = nn.GRU(256, 512, 3, batch_first=True)
+        self.gru = nn.GRU(256, 512, 3, batch_first=True, dropout=dropout)
         self.fc5 = nn.Linear(512, alphabet_size)
 
+        self.eps_coef = eps_coef
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
         self.softmax = nn.Softmax(dim=1)
@@ -35,7 +38,7 @@ class MolecularVAE(nn.Module):
         return mu, logvar
 
     def sampling(self, z_mean, z_logvar):
-        epsilon = 1e-2 * torch.randn_like(z_logvar)
+        epsilon = self.eps_coef * torch.randn_like(z_logvar)
         return torch.exp(0.5 * z_logvar) * epsilon + z_mean
 
     def decode(self, z):
