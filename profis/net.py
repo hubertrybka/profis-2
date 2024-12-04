@@ -8,7 +8,7 @@ class MolecularVAE(nn.Module):
                  latent_size=32,
                  alphabet_size=30,
                  dropout=0,
-                 eps_coef=1e-2
+                 eps_coef=1
         ):
         super(MolecularVAE, self).__init__()
 
@@ -68,7 +68,7 @@ class Profis(nn.Module):
                  latent_size=32,
                  hidden_size=512,
                  gru_layers=3,
-                 eps_coef=1e-2,
+                 eps_coef=1,
                  dropout=0,
                  alphabet_size=30
         ):
