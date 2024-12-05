@@ -252,7 +252,6 @@ def encode(df, model, device, batch=1024):
             mu, logvar = model.encoder(X)
             mus.append(mu.cpu().numpy())
             logvars.append(logvar.cpu().numpy())
-
         mus = np.concatenate(mus, axis=0)
         logvars = np.concatenate(logvars, axis=0)
     return mus, logvars
