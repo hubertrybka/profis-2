@@ -94,7 +94,6 @@ def initialize_profis(config_path):
         alphabet_size=len(load_charset()))
     return model
 
-
 def is_valid(smiles):
     """
     Check if a SMILES string is valid
@@ -248,8 +247,9 @@ def encode(df, model, device, batch=1024):
     model.to(device)
     with torch.no_grad():
         for batch in dataloader:
-            X, _ = batch.to(device)
-            mu, logvar = model.encoder(X)
+            X, _ = batch
+            X = X.to(device)
+            mu, logvar = model.encode(X)
             mus.append(mu.cpu().numpy())
             logvars.append(logvar.cpu().numpy())
         mus = np.concatenate(mus, axis=0)
