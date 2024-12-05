@@ -86,9 +86,10 @@ argparser.add_argument('--lr', type=float, default=0.0001,
                        help='Learning rate for the optimizer')
 argparser.add_argument('--name', type=str, default='profis')
 argparser.add_argument('--eps_coef', type=float, default=0.01)
+argparser.add_argument('--dropout', type=float, default=0.2)
 args = argparser.parse_args()
 
-wandb.init(project='profis2', name=args.name)
+wandb.init(project='profis2', name=args.name, config=args)
 
 train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet')
 test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet')
@@ -105,5 +106,5 @@ if os.path.exists('models') is False:
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = MolecularVAE(dropout=0.2).to(device)
+model = MolecularVAE(dropout=args.dropout).to(device)
 model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
