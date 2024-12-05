@@ -33,8 +33,8 @@ class MolecularVAE(nn.Module):
         x = self.relu(self.conv_2(x))
         x = self.relu(self.conv_3(x))
         x = self.selu(self.fc1(x.view(x.size(0), -1)))
-        mu = self.relu(self.fc2(x))
-        logvar = self.relu(self.fc3(x))
+        mu = self.fc2(x)
+        logvar = self.fc3(x)
         return mu, logvar
 
     def sampling(self, z_mean, z_logvar):
