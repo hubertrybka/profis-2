@@ -154,7 +154,7 @@ def main(config_path, verbose=True):
             "alpha": float(config["MLP"]["alpha"]),
             "learning_rate_init": float(config["MLP"]["learning_rate"]),
             "random_state": 42,
-            "max_iter": int(config["MLP"]["max_iter"]),
+            "max_iter": -1,
         }
         with open("data/MLP_param_grid.json", "r") as f:
             param_grid = json.load(f)
