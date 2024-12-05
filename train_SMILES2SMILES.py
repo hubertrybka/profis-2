@@ -74,7 +74,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004,
         print(f'Epoch {epoch} completed in {(end_time - start_time)/60} min')
 
         if epoch % 50 == 0:
-            torch.save(model.state_dict(), f'models/{args.name}_epoch_{epoch}.pt')
+            torch.save(model.state_dict(), f'models/{args.name}/epoch_{epoch}.pt')
 
     return model
 
@@ -102,6 +102,9 @@ torch.manual_seed(42)
 
 if os.path.exists('models') is False:
     os.makedirs('models')
+
+if os.path.exists(f'models/{args.name}') is False:
+    os.makedirs(f'models/{args.name}')
 
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
