@@ -74,6 +74,7 @@ class Profis(nn.Module):
         ):
         super(Profis, self).__init__()
 
+        self.fp_size = fp_size
         self.fc1 = nn.Linear(fp_size, fc1_size)
         self.fc2 = nn.Linear(fc1_size, fc2_size)
         self.fc31 = nn.Linear(fc2_size, latent_size)
