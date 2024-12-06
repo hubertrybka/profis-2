@@ -125,18 +125,6 @@ if __name__ == "__main__":
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
-    if bounds == "auto":
-        config_VAE = configparser.ConfigParser()
-        config_VAE.read(config["SEARCH"]["model_path"].replace("clf.pkl", "config.ini"))
-        epoch = (
-            config_VAE["RUN"]["model_path"].split("/")[-1].split("_")[-1].split(".")[0]
-        )
-        bounds_path = config_VAE["RUN"]["model_path"].replace(
-            config_VAE["RUN"]["model_path"].split("/")[-1], f"latent_bounds_{epoch}.csv"
-        )
-    else:
-        bounds_path = None
-
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     dirname = "latent_vectors_" + timestamp if add_timestamp else "latent_vectors"
@@ -155,7 +143,7 @@ if __name__ == "__main__":
 
     # determine chunk sizes
     chunks = distribute_jobs(n_samples, n_workers)
-    jobs = [(chunk, config, bounds_path) for chunk in chunks]
+    jobs = [(chunk, config) for chunk in chunks]
 
     # run the search
     print(f"Starting search with {n_workers} workers") if verbosity > 0 else None
