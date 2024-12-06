@@ -37,7 +37,7 @@ def bayesian_search(job_package):
     # read config file
     latent_size = int(config["SEARCH"]["latent_size"])
     verbosity = int(config["SEARCH"]["verbosity"])
-    bounds = config["SEARCH"]["bounds"]
+    bounds = float(config["SEARCH"]["bounds"])
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
     min_window = float(config["SEARCH"]["min_window"]) * bounds
     worker_id = int(mp.current_process().name.split("-")[-1])
