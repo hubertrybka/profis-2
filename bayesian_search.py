@@ -191,7 +191,7 @@ if __name__ == "__main__":
             f"latent_size: {latent_size}",
             f"n_samples: {n_samples}",
             f"init_points: {int(config['SEARCH']['n_init'])}",
-            f"n_iter: {int(config['SEARCH']['n_init'])}",
+            f"n_iter: {int(config['SEARCH']['n_iter'])}",
             f"bounds: {bounds}",
             f"verbosity: {verbosity}",
             f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} s",
