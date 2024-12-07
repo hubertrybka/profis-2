@@ -56,7 +56,7 @@ class SCAvgMeasure:
         return config
 
     def encode_fingerprints(self):
-        data = pd.read_parquet(self.train_path)[["fps"]]
+        data = pd.read_parquet(self.train_path)
         encoded = encode(data, self.encoder, device=self.device)[0]
         return encoded
 
