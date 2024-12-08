@@ -194,6 +194,7 @@ if __name__ == "__main__":
             f"n_iter: {int(config['SEARCH']['n_iter'])}",
             f"bounds: {bounds}",
             f"verbosity: {verbosity}",
+            f"n_workers: {n_workers}",
             f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} s",
             f'mean score: {round(results["score"].mean(), 2)}'
             if len(results) > 0
