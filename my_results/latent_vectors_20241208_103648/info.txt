@@ -1,0 +1,14 @@
+model_path: models/MLP_ECFP/clf.pkl
+latent_size: 32
+n_samples: 8
+init_points: 1
+n_iter: 30
+bounds: 2.0
+min_window: 0.01
+verbosity: 1
+n_workers: 8
+time elapsed per sample: 14.12 s
+mean score: 0.95
+sigma score: 0.04
+mean norm: 8.98
+sigma norm: 1.23
