@@ -164,4 +164,4 @@ if __name__ == "__main__":
                   lr=float(parser['RUN']['learn_rate']),
                   name=model_name,
                   print_progress=False,
-                  ignore_nop=parser['MODEL'].getboolean('ignore_nop'))
+                  ignore_nop=parser['RUN'].getboolean('ignore_nop'))
