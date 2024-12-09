@@ -11,7 +11,7 @@ import os
 import time
 from profis.dataset import load_charset, decode_smiles_from_indexes, Smiles2SmilesDataset
 from profis.utils import Annealer
-from profis.net import MolecularVAE, vae_loss
+from profis.net import MolecularVAE, VaeLoss, CEVAELoss
 
 def is_valid(smiles):
     if Chem.MolFromSmiles(smiles, sanitize=True) is None:
@@ -19,12 +19,17 @@ def is_valid(smiles):
     else:
         return True
 
-def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004, print_progress=False):
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004, print_progress=False, ignore_nop=False):
 
     charset = load_charset()
     annealer = Annealer(30, 'cosine', baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
+
+    if ignore_nop:
+        criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
+    else:
+        criterion = VaeLoss()
 
     for epoch in range(1, epochs + 1):
 
@@ -37,7 +42,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004,
             X = data.to(device)
             optimizer.zero_grad()
             output, mean, logvar = model(X)
-            recon_loss, kld_loss = vae_loss(output, X, mean, logvar)
+            recon_loss, kld_loss = criterion(output, X, mean, logvar)
             loss = recon_loss + annealer(kld_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -58,7 +63,7 @@ def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004,
                     X[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
                     output[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
-            loss, _ = vae_loss(output, X, mean, logvar)
+            loss, _ = criterion(output, X, mean, logvar)
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
@@ -87,6 +92,7 @@ argparser.add_argument('--lr', type=float, default=0.0001,
 argparser.add_argument('--name', type=str, default='profis')
 argparser.add_argument('--eps_coef', type=float, default=0.01)
 argparser.add_argument('--dropout', type=float, default=0.2)
+argparser.add_argument('--ignore_nop', action='store_true')
 args = argparser.parse_args()
 
 wandb.init(project='profis2', name=args.name, config=args)
@@ -110,4 +116,4 @@ epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = MolecularVAE(dropout=args.dropout).to(device)
-model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False)
+model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False, ignore_nop=args.ignore_nop)
