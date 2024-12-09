@@ -8,8 +8,8 @@ import rdkit.Chem as Chem
 import rdkit.Chem.Draw as Draw
 import torch
 
-from profis.pred.pred import predict, filter_dataframe
-from profis.utils.modelinit import initialize_model
+from profis.pred import predict, filter_dataframe
+from profis.utils import initialize_profis
 
 
 def main(config_path):
@@ -29,7 +29,7 @@ def main(config_path):
     use_cuda = config["RUN"].getboolean("use_cuda")
     clf_data_path = config["RUN"]["clf_data_path"]
     verbosity = int(config["RUN"]["verbosity"])
-    n_trials = int(config["RUN"]["n_trials"])
+    batch_size  = int(config["RUN"]["batch_size"])
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Data file {file_path} not found")
@@ -46,7 +46,7 @@ def main(config_path):
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     model_config_path = model_path.replace(
-        model_path.split("/")[-1], "hyperparameters.ini"
+        model_path.split("/")[-1], "config.ini"
     )
     model_config = configparser.ConfigParser(allow_no_value=True)
     if not os.path.exists(model_config_path):
@@ -56,7 +56,7 @@ def main(config_path):
 
     # load model
 
-    model = initialize_model(config_path=model_config_path, device=device)
+    model = initialize_profis(config_path=model_config_path).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     print(f"Loaded model from {model_path}") if verbosity > 1 else None
 
@@ -81,8 +81,7 @@ def main(config_path):
         input_vector,
         device=device,
         format=out_encoding,
-        batch_size=512,
-        n_trials=n_trials,
+        batch_size=batch_size
     )
 
     # filter dataframe
