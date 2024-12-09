@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from profis.dataset import load_charset
 
 
 class MolecularVAE(nn.Module):
@@ -55,10 +56,26 @@ class MolecularVAE(nn.Module):
         z = self.sampling(z_mean, z_logvar)
         return self.decode(z), z_mean, z_logvar
 
-def vae_loss(x_decoded_mean, y, z_mean, z_logvar):
-    xent_loss = F.binary_cross_entropy(x_decoded_mean, y, reduction='mean')
-    kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
-    return xent_loss, kl_loss
+class VaeLoss(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.nop_idx = load_charset().index('[nop]')
+
+    def forward(self, x_decoded_mean, y, z_mean, z_logvar, ignore=False):
+
+        if ignore:
+            one_hot = y.argmax(dim=-1)
+            mask = one_hot != self.nop_idx
+            weights = (mask.T / mask.sum(axis=1)).T[mask]
+            loss = F.binary_cross_entropy(
+                x_decoded_mean[mask], one_hot[mask], reduction="none"
+            )
+            return (weights * loss).mean()
+        else:
+            xent_loss = F.binary_cross_entropy(x_decoded_mean, y, reduction='mean')
+        kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
+        return xent_loss, kl_loss
 
 class Profis(nn.Module):
     def __init__(self,

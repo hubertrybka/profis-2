@@ -232,7 +232,7 @@ def dense2sparse(dense, fp_len=4860):
 
 def encode(df, model, device, batch=1024):
     """
-    Encode a dataframe of SMILES strings into latent space vectors
+    Encode a dataframe containing FPs into latent space vectors
     :param df:
     :param model:
     :param device:
