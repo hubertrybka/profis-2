@@ -9,7 +9,7 @@ import argparse
 import os
 import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
-from profis.net import VaeLoss
+from profis.net import VaeLoss, CEVAELoss
 from profis.dataset import ProfisDataset
 from profis.dataset import decode_smiles_from_indexes
 
@@ -21,7 +21,8 @@ def train(model,
           device='cpu',
           lr=0.0001,
           name='profis',
-          print_progress=False):
+          print_progress=False,
+          ignore_nop=False):
     """
     Train the model
     :param model:
@@ -39,7 +40,11 @@ def train(model,
     charset = load_charset()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
-    criterion = VaeLoss()
+
+    if ignore_nop:
+        criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
+    else:
+        criterion = VaeLoss()
 
     for epoch in range(1, epochs + 1):
 
@@ -157,4 +162,5 @@ if __name__ == "__main__":
                   device=device,
                   lr=float(parser['RUN']['learn_rate']),
                   name=model_name,
-                  print_progress=False)
+                  print_progress=False,
+                  ignore_nop=parser['MODEL'].getboolean('ignore_nop'))

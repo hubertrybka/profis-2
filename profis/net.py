@@ -63,6 +63,17 @@ class VaeLoss(nn.Module):
         kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
         return xent_loss, kl_loss
 
+class CEVAELoss(nn.Module):
+    def __init__(self, idx_ignore=None):
+        super().__init__()
+        self.nop_idx = idx_ignore
+
+    def forward(self, x_decoded_mean, y, z_mean, z_logvar):
+        xent_loss = F.cross_entropy(x_decoded_mean.view(-1, x_decoded_mean.size(-1)),
+                                    y.view(-1), reduction='mean', ignore_index=self.nop_idx)
+        kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
+        return xent_loss, kl_loss
+
 class Profis(nn.Module):
     def __init__(self,
                  fp_size=2048,
