@@ -9,7 +9,7 @@ import argparse
 import os
 import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
-from profis.net import vae_loss
+from profis.net import VaeLoss
 from profis.dataset import ProfisDataset
 from profis.dataset import decode_smiles_from_indexes
 
@@ -39,6 +39,7 @@ def train(model,
     charset = load_charset()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
+    criterion = VaeLoss()
 
     for epoch in range(1, epochs + 1):
 
@@ -53,7 +54,7 @@ def train(model,
             y = y.to(device)
             optimizer.zero_grad()
             output, mean, logvar = model(X)
-            recon_loss, kld_loss = vae_loss(output, y, mean, logvar)
+            recon_loss, kld_loss = criterion(output, y, mean, logvar)
             loss = recon_loss + annealer(kld_loss)
             loss.backward()
             train_loss += loss.item()
@@ -75,7 +76,7 @@ def train(model,
                     y[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
                     output[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
-            loss, _ = vae_loss(output, y, mean, logvar)
+            loss, _ = criterion(output, y, mean, logvar)
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
