@@ -45,6 +45,7 @@ def train(model,
         criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
     else:
         criterion = VaeLoss()
+    print('Using criterion:', criterion)
 
     for epoch in range(1, epochs + 1):
 
