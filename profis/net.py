@@ -75,7 +75,7 @@ class CEVAELoss(nn.Module):
         loss = torch.nn.functional.cross_entropy(
             x_hat[mask], y[mask], reduction="none"
         )
-        xent_loss = (weights * loss).sum()
+        xent_loss = (weights * loss).sum() / x_hat.size(0)
         kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
         return xent_loss, kl_loss
 
