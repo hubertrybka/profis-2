@@ -93,6 +93,7 @@ argparser.add_argument('--name', type=str, default='profis')
 argparser.add_argument('--eps_coef', type=float, default=0.01)
 argparser.add_argument('--dropout', type=float, default=0.2)
 argparser.add_argument('--ignore_nop', action='store_true')
+argparser.add_argument('--latent_size', type=int, default=32)
 args = argparser.parse_args()
 
 wandb.init(project='profis2', name=args.name, config=args)
@@ -115,5 +116,5 @@ if os.path.exists(f'models/{args.name}') is False:
 epochs = args.epochs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = MolecularVAE(dropout=args.dropout).to(device)
+model = MolecularVAE(dropout=args.dropout, latent_size=args.latent_size).to(device)
 model = train(model, train_loader, val_loader, epochs, device, lr=args.lr, print_progress=False, ignore_nop=args.ignore_nop)
