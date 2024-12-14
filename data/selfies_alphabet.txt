@@ -26,6 +26,4 @@
 [Ring1]
 [Ring2]
 [S]
-[end]
 [nop]
-[start]
