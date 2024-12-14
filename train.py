@@ -118,7 +118,7 @@ if __name__ == "__main__":
     wandb.init(project='profis2', name=parser['RUN']['run_name'], config=parser)
 
     # Load the data and create the dataloaders
-    fp_type = parser['MODEL']['fp_type']
+    fp_type = parser['MODEL']['in_encoding']
     train_df = pd.read_parquet('data/RNN_dataset_ECFP_train_90.parquet' if fp_type == 'ECFP4' else
                                'data/RNN_dataset_KRFP_train_90.parquet')
     test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if fp_type == 'ECFP4' else
