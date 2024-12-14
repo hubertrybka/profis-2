@@ -39,7 +39,6 @@ def train(model,
         criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
     else:
         criterion = VaeLoss()
-    print('Using criterion:', criterion)
 
     for epoch in range(1, epochs + 1):
 
@@ -157,7 +156,7 @@ if __name__ == "__main__":
                   device=device,
                   lr=float(parser['RUN']['learn_rate']),
                   name=model_name,
-                  out_encoding=parser['MODEL']['out_encoding'],
+                  out_encoding=parser['RUN']['out_encoding'],
                   print_progress=False,
                   ignore_nop=parser['RUN'].getboolean('ignore_nop'),
                   )
