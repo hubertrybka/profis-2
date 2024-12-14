@@ -21,23 +21,17 @@ def train(model,
           device='cpu',
           lr=0.0001,
           name='profis',
+          out_encoding='smiles',
           print_progress=False,
           ignore_nop=False):
-    """
-    Train the model
-    :param model:
-    :param train_loader:
-    :param val_loader:
-    :param annealer:
-    :param epochs:
-    :param device:
-    :param lr:
-    :param name:
-    :param print_progress:
-    :return:
-    """
 
-    charset = load_charset()
+    if out_encoding.lower() == 'smiles':
+        charset = load_charset()
+    elif out_encoding.lower() == 'deepsmiles':
+        charset = load_charset('data/deepsmiles_alphabet.txt')
+    else:
+        raise ValueError(f'Unknown output encoding: {out_encoding}')
+
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
 
@@ -163,5 +157,7 @@ if __name__ == "__main__":
                   device=device,
                   lr=float(parser['RUN']['learn_rate']),
                   name=model_name,
+                  out_encoding=parser['MODEL']['out_encoding'],
                   print_progress=False,
-                  ignore_nop=parser['RUN'].getboolean('ignore_nop'))
+                  ignore_nop=parser['RUN'].getboolean('ignore_nop'),
+                  )
