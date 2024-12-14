@@ -14,7 +14,6 @@ from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
 from profis.clf import SKLearnScorer
 from profis.applicability import SCAvgMeasure
 
-
 # suppress scikit-learn warnings
 def warn(*args, **kwargs):
     pass
