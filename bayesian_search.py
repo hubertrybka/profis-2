@@ -5,6 +5,7 @@ import random
 import time
 import warnings
 import multiprocessing as mp
+import json
 
 import numpy as np
 import pandas as pd
@@ -32,14 +33,12 @@ def bayesian_search(job_package):
     """
 
     # unpack job package
-    n_samples, config = job_package
+    n_samples, latent_bounds, config = job_package
 
     # read config file
     latent_size = int(config["SEARCH"]["latent_size"])
     verbosity = int(config["SEARCH"]["verbosity"])
-    bounds = float(config["SEARCH"]["bounds"])
-    pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
-    min_window = float(config["SEARCH"]["min_window"]) * bounds
+    min_window = float(config["SEARCH"]["min_window"])
     worker_id = int(mp.current_process().name.split("-")[-1])
     print(f"(mp debug) Worker {worker_id} will generate {n_samples} samples ") if verbosity > 0 else None
 
@@ -59,7 +58,7 @@ def bayesian_search(job_package):
         # initialize optimizer
         optimizer = BayesianOptimization(
             f=scorer,
-            pbounds=pbounds,
+            pbounds=latent_bounds,
             verbose=verbosity > 1,
             bounds_transformer=bounds_transformer,
         )
@@ -116,7 +115,7 @@ if __name__ == "__main__":
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
     n_samples = int(config["SEARCH"]["n_samples"])
-    bounds = config["SEARCH"]["bounds"]
+    bounds = float(config["SEARCH"]["bounds"])
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
     add_timestamp = config["SEARCH"].getboolean("add_timestamp")
@@ -124,6 +123,15 @@ if __name__ == "__main__":
 
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    qsar_model_config = configparser.ConfigParser()
+    qsar_model_config.read('/'.join(model_path.split('/')[:-1]) + '/config.ini')
+    profis_path = qsar_model_config['RUN']['model_path']
+    distribution_path = '/'.join(profis_path.split('/')[:-1]) + '/aggregated_posterior.json'
+    latent_distribution = json.load(open(distribution_path))
+    means = latent_distribution["mean"]
+    stds = latent_distribution["std"]
+    latent_bounds = {str(i): (m - bounds * s, m + bounds * s) for i, (m, s) in enumerate(zip(means, stds))}
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -143,7 +151,7 @@ if __name__ == "__main__":
 
     # determine chunk sizes
     chunks = distribute_jobs(n_samples, n_workers)
-    jobs = [(chunk, config) for chunk in chunks]
+    jobs = [(chunk, latent_bounds, config) for chunk in chunks]
 
     # run the search
     print(f"Starting search with {n_workers} workers") if verbosity > 0 else None
