@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 import torch
 import numpy as np
+import deepsmiles as ds
 import re
 import pandas as pd
 
@@ -22,14 +23,13 @@ class ProfisDataset(Dataset):
         fp_len (int): length of fingerprint
     """
 
-    def __init__(self, df, fp_len=4860, smiles_enum=False):
+    def __init__(self, df, fp_len=4860, charset_path='data/smiles_alphabet.txt'):
         self.smiles = df["smiles"]
         self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
         self.smiles = self.prepare_y(self.smiles)
         self.fp_len = fp_len
-        self.smiles_enum = smiles_enum
-        self.charset = load_charset()
+        self.charset = load_charset(charset_path)
         self.char2idx = {s: i for i, s in enumerate(self.charset)}
 
     def __getitem__(self, idx):
@@ -87,6 +87,24 @@ class ProfisDataset(Dataset):
             r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
         return re.findall(pattern, smile)
 
+class DeepSmilesDataset(ProfisDataset):
+
+    def __init__(self, df, fp_len=4860):
+        super().__init__(df, fp_len, charset_path='data/deepsmiles_alphabet.txt')
+        self.converter = ds.Converter(rings=True, branches=True)
+
+    def prepare_y(self, seq):
+        seq = seq.apply(lambda x: self.converter.encode(x))
+        return seq.values
+
+    def split(self, deepsmile):
+        pattern = (
+            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        )
+        return re.findall(pattern, deepsmile)
+
+
 class Smiles2SmilesDataset(Dataset):
     """
     Dataset class for handling RNN training data.
@@ -138,6 +156,8 @@ class Smiles2SmilesDataset(Dataset):
             r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
             r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
         return re.findall(pattern, smile)
+
+
 
 class LatentEncoderDataset(Dataset):
     """
