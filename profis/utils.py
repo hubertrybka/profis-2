@@ -91,7 +91,9 @@ def initialize_profis(config_path):
         gru_layers=int(config["MODEL"]["gru_layers"]),
         eps_coef=float(config["MODEL"]["eps_coef"]),
         dropout=float(config["MODEL"]["dropout"]),
-        alphabet_size=len(load_charset()))
+        alphabet_size=len(load_charset(
+            f'data/{config["MODEL"]["out_encoding"]}_alphabet.txt'
+        )))
     return model
 
 def is_valid(smiles):
