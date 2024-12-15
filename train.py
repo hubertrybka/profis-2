@@ -9,7 +9,7 @@ import argparse
 import os
 import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
-from profis.net import VaeLoss, CEVAELoss
+from profis.net import VaeLoss
 from profis.dataset import ProfisDataset
 from profis.dataset import decode_smiles_from_indexes
 
@@ -22,23 +22,14 @@ def train(model,
           lr=0.0001,
           name='profis',
           out_encoding='smiles',
-          print_progress=False,
-          ignore_nop=False):
+          print_progress=False):
 
-    if out_encoding.lower() == 'smiles':
-        charset = load_charset()
-    elif out_encoding.lower() == 'deepsmiles':
-        charset = load_charset('data/deepsmiles_alphabet.txt')
-    else:
-        raise ValueError(f'Unknown output encoding: {out_encoding}')
+    charset = load_charset(f'data/{out_encoding}_alphabet.txt')
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
 
-    if ignore_nop:
-        criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
-    else:
-        criterion = VaeLoss()
+    criterion = VaeLoss()
 
     for epoch in range(1, epochs + 1):
 
@@ -157,6 +148,5 @@ if __name__ == "__main__":
                   lr=float(parser['RUN']['learn_rate']),
                   name=model_name,
                   out_encoding=parser['RUN']['out_encoding'],
-                  print_progress=False,
-                  ignore_nop=parser['RUN'].getboolean('ignore_nop'),
+                  print_progress=False
                   )
