@@ -90,8 +90,8 @@ class ProfisDataset(Dataset):
 class DeepSmilesDataset(ProfisDataset):
 
     def __init__(self, df, fp_len=4860):
-        super().__init__(df, fp_len, charset_path='data/deepsmiles_alphabet.txt')
         self.converter = ds.Converter(rings=True, branches=True)
+        super().__init__(df, fp_len, charset_path='data/deepsmiles_alphabet.txt')
 
     def prepare_y(self, seq):
         seq = seq.apply(lambda x: self.converter.encode(x))
