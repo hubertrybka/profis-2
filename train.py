@@ -108,7 +108,7 @@ if __name__ == "__main__":
     test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if fp_type == 'ECFP4' else
                               'data/RNN_dataset_KRFP_val_10.parquet')
 
-    out_encoding = parser['RUN'].out_encoding
+    out_encoding = parser['RUN']['out_encoding']
     fp_len = int(parser['MODEL']['fp_len'])
     if out_encoding.lower() == 'smiles':
         data_train = ProfisDataset(train_df, fp_len=fp_len)
