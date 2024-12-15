@@ -19,17 +19,14 @@ def is_valid(smiles):
     else:
         return True
 
-def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004, print_progress=False, ignore_nop=False):
+def train(model, train_loader, val_loader, epochs=100, device='cuda', lr=0.0004, print_progress=False):
 
     charset = load_charset()
     annealer = Annealer(30, 'cosine', baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print('Using device:', device)
 
-    if ignore_nop:
-        criterion = CEVAELoss(idx_ignore=charset.index('[nop]'))
-    else:
-        criterion = VaeLoss()
+    criterion = VaeLoss()
 
     for epoch in range(1, epochs + 1):
 
@@ -92,7 +89,6 @@ argparser.add_argument('--lr', type=float, default=0.0001,
 argparser.add_argument('--name', type=str, default='profis')
 argparser.add_argument('--eps_coef', type=float, default=0.01)
 argparser.add_argument('--dropout', type=float, default=0.2)
-argparser.add_argument('--ignore_nop', action='store_true')
 argparser.add_argument('--latent_size', type=int, default=32)
 args = argparser.parse_args()
 
