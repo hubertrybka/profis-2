@@ -10,7 +10,7 @@ import os
 import time
 from profis.utils import Annealer, load_charset, initialize_profis, is_valid
 from profis.net import VaeLoss
-from profis.dataset import ProfisDataset
+from profis.dataset import ProfisDataset, DeepSmilesDataset
 from profis.dataset import decode_smiles_from_indexes
 
 def train(model,
@@ -107,8 +107,18 @@ if __name__ == "__main__":
                                'data/RNN_dataset_KRFP_train_90.parquet')
     test_df = pd.read_parquet('data/RNN_dataset_ECFP_val_10.parquet' if fp_type == 'ECFP4' else
                               'data/RNN_dataset_KRFP_val_10.parquet')
-    data_train = ProfisDataset(train_df, fp_len=int(parser['MODEL']['fp_len']))
-    data_val = ProfisDataset(test_df, fp_len=int(parser['MODEL']['fp_len']))
+
+    out_encoding = parser['RUN'].out_encoding
+    fp_len = int(parser['MODEL']['fp_len'])
+    if out_encoding.lower() == 'smiles':
+        data_train = ProfisDataset(train_df, fp_len=fp_len)
+        data_val = ProfisDataset(test_df, fp_len=fp_len)
+    elif out_encoding.lower() == 'deepsmiles':
+        data_train = DeepSmilesDataset(train_df, fp_len=fp_len)
+        data_val = DeepSmilesDataset(test_df, fp_len=fp_len)
+    else:
+        raise ValueError(f'Invalid output encoding: {out_encoding}')
+
     train_loader = torch.utils.data.DataLoader(data_train,
                                                batch_size=int(parser['RUN']['batch_size']),
                                                shuffle=True, num_workers=int(parser['RUN']['num_workers']))
