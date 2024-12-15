@@ -61,7 +61,7 @@ def train(model,
             X = X.to(device)
             y = y.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 50 == 0:
+            if batch_idx % 100 == 0:
                 print('Input:', decode_smiles_from_indexes(
                     y[0].argmax(dim=1).cpu().numpy(), charset).replace('[nop]', ''))
                 print('Output:', decode_smiles_from_indexes(
