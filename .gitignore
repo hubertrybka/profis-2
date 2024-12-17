@@ -8,3 +8,5 @@
 /wandb
 /wandb
 *.parquet
+wandb/debug-internal.log
+/wandb
