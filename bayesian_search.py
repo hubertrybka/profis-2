@@ -14,6 +14,7 @@ from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
 from profis.clf import SKLearnScorer
 from profis.applicability import SCAvgMeasure
 
+
 # suppress scikit-learn warnings
 def warn(*args, **kwargs):
     pass
@@ -39,7 +40,11 @@ def bayesian_search(job_package):
     verbosity = int(config["SEARCH"]["verbosity"])
     min_window = float(config["SEARCH"]["min_window"])
     worker_id = int(mp.current_process().name.split("-")[-1])
-    print(f"(mp debug) Worker {worker_id} will generate {n_samples} samples ") if verbosity > 0 else None
+    (
+        print(f"(mp debug) Worker {worker_id} will generate {n_samples} samples", flush=True)
+        if verbosity > 0
+        else None
+    )
 
     # initialize scorer
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
@@ -53,7 +58,14 @@ def bayesian_search(job_package):
     # run optimization
     for j in range(n_samples):
         if j % 10 == 0:
-            print(f"(mp debug) Worker {worker_id} finished {len(vector_list)} samples") if verbosity > 0 else None
+            (
+                print(
+                    f"(mp) Worker {worker_id} finished {len(vector_list)} samples",
+                    flush=True
+                )
+                if verbosity > 0
+                else None
+            )
         # initialize optimizer
         optimizer = BayesianOptimization(
             f=scorer,
@@ -124,13 +136,18 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
     qsar_model_config = configparser.ConfigParser()
-    qsar_model_config.read('/'.join(model_path.split('/')[:-1]) + '/config.ini')
-    profis_path = qsar_model_config['RUN']['model_path']
-    distribution_path = '/'.join(profis_path.split('/')[:-1]) + '/aggregated_posterior.json'
+    qsar_model_config.read("/".join(model_path.split("/")[:-1]) + "/config.ini")
+    profis_path = qsar_model_config["RUN"]["model_path"]
+    distribution_path = (
+        "/".join(profis_path.split("/")[:-1]) + "/aggregated_posterior.json"
+    )
     latent_distribution = json.load(open(distribution_path))
     means = latent_distribution["mean"]
     stds = latent_distribution["std"]
-    latent_bounds = {str(i): (m - bounds * s, m + bounds * s) for i, (m, s) in enumerate(zip(means, stds))}
+    latent_bounds = {
+        str(i): (m - bounds * s, m + bounds * s)
+        for i, (m, s) in enumerate(zip(means, stds))
+    }
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -204,18 +221,26 @@ if __name__ == "__main__":
             f"verbosity: {verbosity}",
             f"n_workers: {n_workers}",
             f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} s",
-            f'mean score: {round(results["score"].mean(), 2)}'
-            if len(results) > 0
-            else round(results["score"].values[0], 2),
-            f'sigma score: {round(results["score"].std(), 2)}'
-            if len(results) > 0
-            else "",
-            f'mean norm: {round(results["norm"].mean(), 2)}'
-            if len(results) > 0
-            else round(results["norm"].values[0], 2),
-            f'sigma norm: {round(results["norm"].std(), 2)}'
-            if len(results) > 0
-            else "",
+            (
+                f'mean score: {round(results["score"].mean(), 2)}'
+                if len(results) > 0
+                else round(results["score"].values[0], 2)
+            ),
+            (
+                f'sigma score: {round(results["score"].std(), 2)}'
+                if len(results) > 0
+                else ""
+            ),
+            (
+                f'mean norm: {round(results["norm"].mean(), 2)}'
+                if len(results) > 0
+                else round(results["norm"].values[0], 2)
+            ),
+            (
+                f'sigma norm: {round(results["norm"].std(), 2)}'
+                if len(results) > 0
+                else ""
+            ),
         ]
         text = "\n".join(text)
         f.write(text)
