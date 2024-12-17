@@ -3,7 +3,12 @@ import argparse
 import rdkit.Chem as Chem
 import os
 import rdkit.Chem.MolStandardize.rdMolStandardize as rdMolStandardize
-from profis.utils import sparse2dense, smiles2sparse_KRFP, smiles2sparse_ECFP, load_charset
+from profis.utils import (
+    sparse2dense,
+    smiles2sparse_KRFP,
+    smiles2sparse_ECFP,
+    load_charset,
+)
 
 
 def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):

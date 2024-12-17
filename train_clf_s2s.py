@@ -181,8 +181,10 @@ def main(config_path, verbose=True):
     best_params = clf.get_params()
 
     if verbose:
-        print(f"Best hyperparameters: {best_params}") if optimize else print(
-            f"Hyperparameters: {best_params}"
+        (
+            print(f"Best hyperparameters: {best_params}")
+            if optimize
+            else print(f"Hyperparameters: {best_params}")
         )
         print(
             f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}"

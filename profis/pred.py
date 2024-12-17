@@ -54,7 +54,9 @@ def predict(
             charset = load_charset()
             for i in range(len(preds_concat)):
                 argmaxed = preds_concat[i].argmax(axis=1)
-                smiles = decode_smiles_from_indexes(argmaxed, charset).replace('[nop]', '')
+                smiles = decode_smiles_from_indexes(argmaxed, charset).replace(
+                    "[nop]", ""
+                )
                 row = pd.DataFrame({"idx": i, "smiles": smiles}, index=[len(df)])
                 df = pd.concat([df, row])
         else:

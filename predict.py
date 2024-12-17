@@ -29,7 +29,7 @@ def main(config_path):
     use_cuda = config["RUN"].getboolean("use_cuda")
     clf_data_path = config["RUN"]["clf_data_path"]
     verbosity = int(config["RUN"]["verbosity"])
-    batch_size  = int(config["RUN"]["batch_size"])
+    batch_size = int(config["RUN"]["batch_size"])
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Data file {file_path} not found")
@@ -45,9 +45,7 @@ def main(config_path):
     dirname = os.path.dirname(file_path)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
-    model_config_path = model_path.replace(
-        model_path.split("/")[-1], "config.ini"
-    )
+    model_config_path = model_path.replace(model_path.split("/")[-1], "config.ini")
     model_config = configparser.ConfigParser(allow_no_value=True)
     if not os.path.exists(model_config_path):
         raise ValueError(f"Model config file {model_config_path} not found")
@@ -77,11 +75,7 @@ def main(config_path):
     # get predictions
     print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
     df = predict(
-        model,
-        input_vector,
-        device=device,
-        format=out_encoding,
-        batch_size=batch_size
+        model, input_vector, device=device, format=out_encoding, batch_size=batch_size
     )
 
     # filter dataframe

@@ -3,6 +3,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score
 import numpy as np
 import pickle
 
+
 def nested_CV(
     model,
     X,
@@ -73,6 +74,7 @@ def nested_CV(
         best_model = model
 
     return best_model, np.array(accuracy_scores), np.array(roc_auc_scores)
+
 
 class SKLearnScorer:
     """

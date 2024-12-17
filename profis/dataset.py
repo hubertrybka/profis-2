@@ -4,26 +4,29 @@ import numpy as np
 import deepsmiles as ds
 import re
 import pandas as pd
+import selfies as sf
 
-def load_charset(path='data/smiles_alphabet.txt'):
+
+def load_charset(path="data/smiles_alphabet.txt"):
     with open(path) as f:
         charset = f.readlines()
     charset = [char.strip() for char in charset]
     return charset
 
+
 class ProfisDataset(Dataset):
     """
-    Dataset class for handling RNN training data.
+    Dataset class for handling FP -> SMILES RNN training data.
     Parameters:
         df (pd.DataFrame): dataframe containing SMILES and fingerprints,
                            SMILES must be contained in ['smiles'] column as strings,
                            fingerprints must be contained in ['fps'] column as lists
                            of integers (dense vectors).
-        vectorizer: vectorizer object instantiated from vectorizer.py
         fp_len (int): length of fingerprint
+        charset_path (str): path to the charset file
     """
 
-    def __init__(self, df, fp_len=4860, charset_path='data/smiles_alphabet.txt'):
+    def __init__(self, df, fp_len=2048, charset_path="data/smiles_alphabet.txt"):
         self.smiles = df["smiles"]
         self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
@@ -84,14 +87,26 @@ class ProfisDataset(Dataset):
     def split(self, smile):
         pattern = (
             r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
-            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        )
         return re.findall(pattern, smile)
 
-class DeepSmilesDataset(ProfisDataset):
 
-    def __init__(self, df, fp_len=4860):
+class DeepSmilesDataset(ProfisDataset):
+    """
+    Dataset class for handling FP -> DeepSMILES RNN training data.
+    Parameters:
+        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
+                           SMILES must be contained in ['smiles'] column as strings,
+                           fingerprints must be contained in ['fps'] column as lists
+                           of integers (dense vectors).
+        fp_len (int): length of fingerprint
+        charset_path (str): path to the charset file
+    """
+
+    def __init__(self, df, fp_len=2048):
         self.converter = ds.Converter(rings=True, branches=True)
-        super().__init__(df, fp_len, charset_path='data/deepsmiles_alphabet.txt')
+        super().__init__(df, fp_len, charset_path="data/deepsmiles_alphabet.txt")
 
     def prepare_y(self, seq):
         seq = seq.apply(lambda x: self.converter.encode(x))
@@ -105,9 +120,32 @@ class DeepSmilesDataset(ProfisDataset):
         return re.findall(pattern, deepsmile)
 
 
+class SelfiesDataset(ProfisDataset):
+    """
+    Dataset class for handling FP -> DeepSMILES RNN training data.
+    Parameters:
+        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
+                           SMILES must be contained in ['smiles'] column as strings,
+                           fingerprints must be contained in ['fps'] column as lists
+                           of integers (dense vectors).
+        fp_len (int): length of fingerprint
+        charset_path (str): path to the charset file
+    """
+
+    def __init__(self, df, fp_len=2048):
+        super().__init__(df, fp_len, charset_path="data/selfies_alphabet.txt")
+
+    def prepare_y(self, seq):
+        seq = seq.apply(lambda x: sf.encoder(x))
+        return seq.values
+
+    def split(self, selfie):
+        return list(sf.split_selfies(selfie))
+
+
 class Smiles2SmilesDataset(Dataset):
     """
-    Dataset class for handling RNN training data.
+    Dataset class for handling SMILES -> SMILES RNN training data.
     Parameters:
         df (pd.DataFrame): dataframe containing SMILES and fingerprints,
                            SMILES must be contained in ['smiles'] column as strings,
@@ -138,7 +176,6 @@ class Smiles2SmilesDataset(Dataset):
     def __len__(self):
         return len(self.smiles)
 
-
     def vectorize(self, seq, pad_to_len=100):
         splited = self.split(seq) + ["[nop]"] * (pad_to_len - len(self.split(seq)))
         X = np.zeros((len(splited), len(self.charset)))
@@ -154,43 +191,6 @@ class Smiles2SmilesDataset(Dataset):
     def split(self, smile):
         pattern = (
             r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
-            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])")
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        )
         return re.findall(pattern, smile)
-
-
-
-class LatentEncoderDataset(Dataset):
-    """
-    Dataset for encoding fingerprints into latent space.
-    Parameters:
-        df (pd.DataFrame): pandas DataFrame object containing 'fps' column, which contains fingerprints
-        in the form of lists of integers (dense representation)
-        fp_len (int): length of fingerprints
-    """
-
-    def __init__(self, df, fp_len):
-        self.fps = pd.DataFrame(df["fps"])
-        self.fp_len = fp_len
-
-    def __len__(self):
-        return len(self.fps)
-
-    def __getitem__(self, idx):
-        raw_X = self.fps.iloc[idx]
-        X_prepared = self.prepare_X(raw_X).values[0]
-        X = np.array(X_prepared, dtype=int)
-        X_reconstructed = self.reconstruct_fp(X)
-        return torch.from_numpy(X_reconstructed).float()
-
-    def reconstruct_fp(self, fp):
-        fp_rec = np.zeros(self.fp_len)
-        fp_rec[fp] = 1
-        return fp_rec
-
-    @staticmethod
-    def prepare_X(fps):
-        fps = fps.apply(lambda x: np.array(x, dtype=int))
-        return fps
-
-def decode_smiles_from_indexes(vec, charset):
-    return "".join(map(lambda x: charset[x], vec)).strip()

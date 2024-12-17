@@ -22,9 +22,7 @@ class SCAvgMeasure:
         self.encoder_path = self.config["RUN"]["model_path"]
         self.device = device("cpu")
         self.encoder = initialize_profis(
-            self.encoder_path.replace(
-                self.encoder_path.split("/")[-1], "config.ini"
-            )
+            self.encoder_path.replace(self.encoder_path.split("/")[-1], "config.ini")
         )
         self.encoder.load_state_dict(
             torch.load(self.encoder_path, map_location=self.device)
@@ -72,4 +70,3 @@ class SCAvgMeasure:
             np.linalg.norm(self.train_encoded, axis=1) * np.linalg.norm(query)
         )
         return distances
-

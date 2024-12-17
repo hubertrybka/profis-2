@@ -2,13 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class MolecularVAE(nn.Module):
-    def __init__(self,
-                 latent_size=32,
-                 alphabet_size=30,
-                 dropout=0,
-                 eps_coef=1
-        ):
+    def __init__(self, latent_size=32, alphabet_size=30, dropout=0, eps_coef=1):
         super(MolecularVAE, self).__init__()
 
         self.conv_1 = nn.Conv1d(100, 9, kernel_size=9)
@@ -54,14 +50,16 @@ class MolecularVAE(nn.Module):
         z = self.sampling(z_mean, z_logvar)
         return self.decode(z), z_mean, z_logvar
 
+
 class VaeLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(self, x_hat, y, z_mean, z_logvar):
-        xent_loss = F.binary_cross_entropy(x_hat, y, reduction='mean')
+        xent_loss = F.binary_cross_entropy(x_hat, y, reduction="mean")
         kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
         return xent_loss, kl_loss
+
 
 class CEVAELoss(nn.Module):
     def __init__(self, idx_ignore=None):
@@ -72,25 +70,25 @@ class CEVAELoss(nn.Module):
         one_hot = y.argmax(dim=-1)
         mask = one_hot != self.nop_idx
         weights = (mask.T / mask.sum(axis=1)).T[mask]
-        loss = torch.nn.functional.cross_entropy(
-            x_hat[mask], y[mask], reduction="none"
-        )
+        loss = torch.nn.functional.cross_entropy(x_hat[mask], y[mask], reduction="none")
         xent_loss = (weights * loss).sum() / x_hat.size(0)
         kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
         return xent_loss, kl_loss
 
+
 class Profis(nn.Module):
-    def __init__(self,
-                 fp_size=2048,
-                 fc1_size=1024,
-                 fc2_size=1024,
-                 latent_size=32,
-                 hidden_size=512,
-                 gru_layers=3,
-                 eps_coef=1,
-                 dropout=0,
-                 alphabet_size=30
-        ):
+    def __init__(
+        self,
+        fp_size=2048,
+        fc1_size=1024,
+        fc2_size=1024,
+        latent_size=32,
+        hidden_size=512,
+        gru_layers=3,
+        eps_coef=1,
+        dropout=0,
+        alphabet_size=30,
+    ):
         super(Profis, self).__init__()
 
         self.fp_size = fp_size
@@ -99,7 +97,9 @@ class Profis(nn.Module):
         self.fc31 = nn.Linear(fc2_size, latent_size)
         self.fc32 = nn.Linear(fc2_size, latent_size)
         self.fc4 = nn.Linear(latent_size, 256)
-        self.gru = nn.GRU(256, hidden_size, gru_layers, batch_first=True, dropout=dropout)
+        self.gru = nn.GRU(
+            256, hidden_size, gru_layers, batch_first=True, dropout=dropout
+        )
         self.fc5 = nn.Linear(hidden_size, alphabet_size)
 
         self.relu = nn.ReLU()
