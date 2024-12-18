@@ -33,7 +33,7 @@ class Annealer:
         self.shape = shape
         self.baseline = baseline
         if disable:
-            self.shape = 'none'
+            self.shape = "none"
             self.baseline = 0.0
 
     def __call__(self, kld):
@@ -47,17 +47,19 @@ class Annealer:
         return out
 
     def slope(self):
-        if self.shape == 'linear':
-            y = (self.current_step / self.total_steps)
-        elif self.shape == 'cosine':
+        if self.shape == "linear":
+            y = self.current_step / self.total_steps
+        elif self.shape == "cosine":
             y = (math.cos(math.pi * (self.current_step / self.total_steps - 1)) + 1) / 2
-        elif self.shape == 'logistic':
-            exponent = ((self.total_steps / 2) - self.current_step)
+        elif self.shape == "logistic":
+            exponent = (self.total_steps / 2) - self.current_step
             y = 1 / (1 + math.exp(exponent))
-        elif self.shape == 'none':
+        elif self.shape == "none":
             y = 1.0
         else:
-            raise ValueError('Invalid shape for annealing function. Must be linear, cosine, or logistic.')
+            raise ValueError(
+                "Invalid shape for annealing function. Must be linear, cosine, or logistic."
+            )
         y = self.add_baseline(y)
         return y
 
@@ -74,10 +76,13 @@ class Annealer:
 
     def cyclical_setter(self, value):
         if value is not bool:
-            raise ValueError('Cyclical_setter method requires boolean argument (True/False)')
+            raise ValueError(
+                "Cyclical_setter method requires boolean argument (True/False)"
+            )
         else:
             self.cyclical = value
         return
+
 
 def initialize_profis(config_path):
     config = ConfigParser()
@@ -91,10 +96,12 @@ def initialize_profis(config_path):
         gru_layers=int(config["MODEL"]["gru_layers"]),
         eps_coef=float(config["MODEL"]["eps_coef"]),
         dropout=float(config["MODEL"]["dropout"]),
-        alphabet_size=len(load_charset(
-            f'data/{config["RUN"]["out_encoding"]}_alphabet.txt'
-        )))
+        alphabet_size=len(
+            load_charset(f'data/{config["RUN"]["out_encoding"].lower()}_alphabet.txt')
+        ),
+    )
     return model
+
 
 def is_valid(smiles):
     """
@@ -106,6 +113,7 @@ def is_valid(smiles):
         return False
     else:
         return True
+
 
 def KRFP_score(mol, fp: torch.Tensor):
     """
@@ -157,6 +165,7 @@ def try_QED(mol):
     except:
         qed = 0
     return qed
+
 
 def smiles2sparse_KRFP(smiles):
     """
@@ -285,3 +294,7 @@ def smiles2dense_ECFP(smiles, n_bits=2048):
     mol = Chem.MolFromSmiles(smiles)
     fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
     return sparse2dense(fp)
+
+
+def decode_seq_from_indexes(vec, charset):
+    return "".join(map(lambda x: charset[x], vec)).strip()
