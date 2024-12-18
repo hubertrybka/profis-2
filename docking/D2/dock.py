@@ -53,7 +53,7 @@ def run_gnina(smiles, name='test', gnina_path=GNINA, num_cpu=-1, verbose=True,
 
     time_elapsed = round(time.time() - start_time, 3)
 
-    with open(f'gnina_out{dirname}/{name}.log') as file:
+    with open(f'gnina_out_{dirname}/{name}.log') as file:
         output = file.read()
         output = parse_gnina_output(output)
         top = get_top_score(output, score='affinity')
@@ -201,8 +201,10 @@ if __name__ == '__main__':
                                                        cnn_scoring=args.cnn_scoring,
                                                        num_modes=args.num_modes,
                                                        dirname=filename)
-        except Exception:
+        except Exception as e:
+            print(f'Error: {e}')
             continue
+
         times.append(single_docking_time)
         mean_time = round(np.array(times).mean(), 2)
 
@@ -220,6 +222,5 @@ if __name__ == '__main__':
         else:
             results_df = pd.concat([results_df, results])
             results_df.to_csv(f'gnina_out_{filename}/scores.csv', index=False)
-        time_elapsed = time.time() - start_time
-
-        print(f'Finished in {time_elapsed / 60:.2f} minutes')
+    time_elapsed = time.time() - start_time
+    print(f'Finished in {time_elapsed / 60:.2f} minutes')
