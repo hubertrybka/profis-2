@@ -10,3 +10,7 @@
 *.parquet
 wandb/debug-internal.log
 /wandb
+*.log
+*.sdf
+*.pdbqt
+*.mol
