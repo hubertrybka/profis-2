@@ -10,6 +10,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem import QED
 from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 from torch.utils.data import DataLoader
+import deepsmiles as ds
 
 
 class Annealer:
@@ -102,18 +103,24 @@ def initialize_profis(config_path):
     )
     return model
 
+class ValidityChecker:
 
-def is_valid(smiles):
-    """
-    Check if a SMILES string is valid
-    :param smiles: SMILES string
-    :return: True if valid, False otherwise
-    """
-    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
-        return False
-    else:
-        return True
+    def __init__(self, encoding):
+        self.encoding = encoding
+        if encoding == "deepsmiles":
+            self.decoder = ds.Converter(rings=True, branches=True)
 
+    def __call__(self, seq):
+        if self.encoding == "selfies":
+            return True
+        if self.encoding == "deepsmiles":
+            smiles = self.decoder.decode(seq)
+        else:
+            smiles = seq
+        if Chem.MolFromSmiles(smiles, sanitize=True) is None:
+            return False
+        else:
+            return True
 
 def KRFP_score(mol, fp: torch.Tensor):
     """
