@@ -8,7 +8,8 @@ from rdkit import Chem
 from rdkit.Chem import QED, rdMolDescriptors
 from torch.utils.data import DataLoader
 from profis.tanimoto import TanimotoSearch
-from profis.dataset import decode_smiles_from_indexes, load_charset
+from profis.dataset import load_charset
+from profis.utils import decode_seq_from_indexes
 
 # Suppress RDKit warnings
 from rdkit import RDLogger
@@ -20,8 +21,9 @@ def predict(
     model,
     latent_vectors: np.array,
     device: torch.device = torch.device("cpu"),
-    format: str = "smiles",
+    encoding_format: str = "smiles",
     batch_size: int = 64,
+    dropout = False
 ):
     """
     Generate molecules from latent vectors
@@ -29,7 +31,7 @@ def predict(
         model (torch.nn.Module): ProfisGRU model.
         latent_vectors (np.array): numpy array of latent vectors. Shape = (n_samples, latent_size).
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
-        format: format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
+        encoding_format: encoding format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
         batch_size: batch size for prediction.
 
     Returns:
@@ -40,6 +42,8 @@ def predict(
 
     loader = DataLoader(latent_vectors, batch_size=batch_size, shuffle=False)
 
+    if not dropout:
+        model.eval()
     with torch.no_grad():
         df = pd.DataFrame(columns=["idx", "smiles"])
         preds_list = []
@@ -50,17 +54,17 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        if format == "smiles":
+        if encoding_format == "smiles":
             charset = load_charset()
             for i in range(len(preds_concat)):
                 argmaxed = preds_concat[i].argmax(axis=1)
-                smiles = decode_smiles_from_indexes(argmaxed, charset).replace(
+                smiles = decode_seq_from_indexes(argmaxed, charset).replace(
                     "[nop]", ""
                 )
                 row = pd.DataFrame({"idx": i, "smiles": smiles}, index=[len(df)])
                 df = pd.concat([df, row])
         else:
-            raise ValueError("Invalid format. Supported formats: 'smiles'.")
+            raise ValueError("Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'.")
 
         df["idx"] = range(len(df))
 
@@ -105,7 +109,6 @@ def try_smiles2mol(smiles):
     except:
         return None
 
-
 def filter_dataframe(df, config):
     """
     Filters a dataframe of molecules based on the given configuration.
@@ -137,11 +140,7 @@ def filter_dataframe(df, config):
 
     # filter by QED
     df_copy["qed"] = df_copy["mols"].apply(QED.default)
-    if config["QED"]["min"]:
-        df_copy = df_copy[df_copy["qed"] >= float(config["QED"]["min"])]
-    if config["QED"]["max"]:
-        df_copy = df_copy[df_copy["qed"] <= float(config["QED"]["max"])]
-    print(f"Number of molecules after filtering by QED: {len(df_copy)}")
+
 
     # filter by mol_wt
     df_copy["mol_wt"] = df_copy["mols"].apply(Chem.rdMolDescriptors.CalcExactMolWt)
@@ -227,9 +226,13 @@ def filter_dataframe(df, config):
     if config["RUN"]["clf_data_path"] is not None:
         ts = TanimotoSearch(config["RUN"]["clf_data_path"])
 
-        df_copy["novelty_score"] = df_copy["smiles"].apply(
-            lambda x: ts(x, return_similar=False)
+        tanimoto_search_results = df_copy["smiles"].apply(
+            lambda x: ts(x, return_similar=True)
         )
+
+        df_copy["novelty_score"] = tanimoto_search_results.apply(lambda x: x[0])
+        df_copy["closest_in_train"] = tanimoto_search_results.apply(lambda x: x[1])
+
         if config["NOVELTY_SCORE"]["min"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
