@@ -1,0 +1,16 @@
+CRYST1   45.810   81.760   81.360  90.00  99.80  90.00 P 1 21 1      1
+HETATM    1  SD  ETM A 404     -24.379   6.172  48.405  0.50 34.63           S  
+HETATM    2  C1  ETM A 404     -22.755   5.539  47.869  0.50 32.73           C  
+HETATM    3  N1  ETM A 404     -21.719   4.036  46.125  0.50 30.17           N  
+HETATM    4  C2  ETM A 404     -22.909   4.812  46.535  0.50 31.67           C  
+HETATM    5  C3  ETM A 404     -20.740   3.874  47.200  0.50 29.89           C  
+HETATM    6  C4  ETM A 404     -21.075   4.779  45.039  0.50 31.85           C  
+HETATM    7  C5  ETM A 404     -22.109   2.709  45.631  0.50 28.80           C  
+CONECT    1    2
+CONECT    2    1    4
+CONECT    3    5    6    7    4
+CONECT    4    2    3
+CONECT    5    3
+CONECT    6    3
+CONECT    7    3
+END
