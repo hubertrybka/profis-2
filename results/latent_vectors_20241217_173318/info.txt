@@ -1,0 +1,14 @@
+model_path: models/MLP_KRFP/clf.pkl
+latent_size: 32
+n_samples: 10000
+init_points: 4
+n_iter: 20
+bounds: 2.0
+min_window: 0.001
+verbosity: 2
+n_workers: 100
+time elapsed per sample: 1.16 s
+mean score: 0.88
+sigma score: 0.28
+mean norm: 22.59
+sigma norm: 2.98
