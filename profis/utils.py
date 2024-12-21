@@ -114,7 +114,10 @@ class ValidityChecker:
         if self.encoding == "selfies":
             return True
         if self.encoding == "deepsmiles":
-            smiles = self.decoder.decode(seq)
+            try:
+                smiles = self.decoder.decode(seq)
+            except ds.exceptions.DecodeError:
+                return False
         else:
             smiles = seq
         if Chem.MolFromSmiles(smiles, sanitize=True) is None:
