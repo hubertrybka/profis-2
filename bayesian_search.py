@@ -41,7 +41,10 @@ def bayesian_search(job_package):
     min_window = float(config["SEARCH"]["min_window"])
     worker_id = int(mp.current_process().name.split("-")[-1])
     (
-        print(f"(mp) Worker {worker_id} started and will generate {n_samples} samples", flush=True)
+        print(
+            f"(mp) Worker {worker_id} started and will generate {n_samples} samples",
+            flush=True,
+        )
         if verbosity > 1
         else None
     )
@@ -61,7 +64,7 @@ def bayesian_search(job_package):
             (
                 print(
                     f"(mp debug) Worker {worker_id} finished {len(vector_list)} samples",
-                    flush=True
+                    flush=True,
                 )
                 if verbosity > 1
                 else None

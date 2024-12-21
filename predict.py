@@ -75,8 +75,12 @@ def main(config_path):
     # get predictions
     print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
     df = predict(
-        model, input_vector, device=device, encoding_format=out_encoding, batch_size=batch_size,
-        dropout=config["RUN"].getboolean("dropout")
+        model,
+        input_vector,
+        device=device,
+        encoding_format=out_encoding,
+        batch_size=batch_size,
+        dropout=config["RUN"].getboolean("dropout"),
     )
 
     # filter dataframe

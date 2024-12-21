@@ -3,21 +3,14 @@ import torch.nn as nn
 import torch.utils.data
 import pandas as pd
 import torch.optim as optim
-from rdkit import Chem
 import wandb
 from tqdm import tqdm
 import os
 import time
-from profis.utils import ProfisDataset, Annealer, load_charset
-from profis.net import Profis, vae_loss
-from profis.dataset import decode_smiles_from_indexes
-
-
-def is_valid(smiles):
-    if Chem.MolFromSmiles(smiles, sanitize=True) is None:
-        return False
-    else:
-        return True
+from profis.utils import ProfisDataset, load_charset
+from profis.net import Profis, VaeLoss, Annealer
+from profis.utils import decode_seq_from_indexes
+from profis.utils import ValidityChecker
 
 
 def train(
@@ -30,6 +23,8 @@ def train(
     print_progress=False,
 ):
 
+    is_valid = ValidityChecker("smiles")
+    vae_loss = VaeLoss()
     charset = load_charset()
     annealer = Annealer(30, "cosine", baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -71,13 +66,13 @@ def train(
             if batch_idx % 100 == 0:
                 print(
                     "Input:",
-                    decode_smiles_from_indexes(
+                    decode_seq_from_indexes(
                         y[0].argmax(dim=1).cpu().numpy(), charset
                     ).replace("[nop]", ""),
                 )
                 print(
                     "Output:",
-                    decode_smiles_from_indexes(
+                    decode_seq_from_indexes(
                         output[0].argmax(dim=1).cpu().numpy(), charset
                     ).replace("[nop]", ""),
                 )
@@ -87,8 +82,7 @@ def train(
         val_loss /= len(val_loader)
         val_outputs = torch.cat(val_outputs, dim=0).numpy()
         val_out_smiles = [
-            decode_smiles_from_indexes(out.argmax(axis=1), charset)
-            for out in val_outputs
+            decode_seq_from_indexes(out.argmax(axis=1), charset) for out in val_outputs
         ]
         val_out_smiles = [smile.replace("[nop]", "") for smile in val_out_smiles]
         valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]

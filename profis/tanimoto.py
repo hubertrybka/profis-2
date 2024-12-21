@@ -41,7 +41,9 @@ class TanimotoSearch:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Search for the most similar molecule in a dataset")
+    parser = argparse.ArgumentParser(
+        description="Search for the most similar molecule in a dataset"
+    )
     parser.add_argument(
         "-d", "--data_path", type=str, help="Path to the classifier training set"
     )

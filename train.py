@@ -9,13 +9,12 @@ import argparse
 import os
 import time
 from profis.utils import (
-    Annealer,
     load_charset,
     initialize_profis,
     ValidityChecker,
     decode_seq_from_indexes,
 )
-from profis.net import VaeLoss
+from profis.net import VaeLoss, Annealer
 from profis.dataset import ProfisDataset, DeepSmilesDataset, SelfiesDataset
 
 
