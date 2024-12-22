@@ -125,11 +125,11 @@ def apply_filter(df, column, func, min_val=None, max_val=None, verbose=False):
         pd.DataFrame: Filtered DataFrame.
     """
     df[column] = df["mols"].apply(func)
-    if min_val is not None:
-        df = df[df[column] >= min_val]
-    if max_val is not None:
-        df = df[df[column] <= max_val]
-    if verbose:
+    if min_val != "":
+        df = df[df[column] >= float(min_val)]
+    if max_val != "":
+        df = df[df[column] <= float(max_val)]
+    if verbose and (min_val != "" and max_val != ""):
         print(f"Number of molecules after filtering by {column}: {len(df)}")
     return df
 
@@ -155,58 +155,58 @@ def filter_dataframe(df, config, verbose=False):
         (
             "largest_ring",
             get_largest_ring,
-            config["RING_SIZE"].getint("min"),
-            config["RING_SIZE"].getint("max"),
+            config["RING_SIZE"].get("min"),
+            config["RING_SIZE"].get("max"),
         ),
         (
             "num_rings",
             Chem.rdMolDescriptors.CalcNumRings,
-            config["NUM_RINGS"].getint("min"),
-            config["NUM_RINGS"].geint("max"),
+            config["NUM_RINGS"].get("min"),
+            config["NUM_RINGS"].get("max"),
         ),
-        ("qed", QED.default, config["QED"].getfloat("min"), config["QED"].getfloat("max")),
+        ("qed", QED.default, config["QED"].get("min"), config["QED"].get("max")),
         (
             "mol_wt",
             Chem.rdMolDescriptors.CalcExactMolWt,
-            config["MOL_WEIGHT"].getfloat("min"),
-            config["MOL_WEIGHT"].getfloat("max"),
+            config["MOL_WEIGHT"].get("min"),
+            config["MOL_WEIGHT"].get("max"),
         ),
         (
             "num_HBA",
             rdMolDescriptors.CalcNumHBA,
-            config["NUM_HBA"].getint("min"),
-            config["NUM_HBA"].getint("max"),
+            config["NUM_HBA"].get("min"),
+            config["NUM_HBA"].get("max"),
         ),
         (
             "num_HBD",
             rdMolDescriptors.CalcNumHBD,
-            config["NUM_HBD"].getint("min"),
-            config["NUM_HBD"].getint("max"),
+            config["NUM_HBD"].get("min"),
+            config["NUM_HBD"].get("max"),
         ),
-        ("logP", Crippen.MolLogP, config["LOGP"].getfloat("min"), config["LOGP"].getfloat("max")),
+        ("logP", Crippen.MolLogP, config["LOGP"].get("min"), config["LOGP"].get("max")),
         (
             "num_rotatable_bonds",
             rdMolDescriptors.CalcNumRotatableBonds,
-            config["NUM_ROT_BONDS"].getint("min"),
-            config["NUM_ROT_BONDS"].getint("max"),
+            config["NUM_ROT_BONDS"].get("min"),
+            config["NUM_ROT_BONDS"].get("max"),
         ),
         (
             "tpsa",
             rdMolDescriptors.CalcTPSA,
-            config["TPSA"].getfloat("min"),
-            config["TPSA"].getfloat("max"),
+            config["TPSA"].get("min"),
+            config["TPSA"].get("max"),
         ),
         (
             "bridgehead_atoms",
             rdMolDescriptors.CalcNumBridgeheadAtoms,
-            config["NUM_BRIDGEHEAD_ATOMS"].getint("min"),
-            config["NUM_BRIDGEHEAD_ATOMS"].getint("max"),
+            config["NUM_BRIDGEHEAD_ATOMS"].get("min"),
+            config["NUM_BRIDGEHEAD_ATOMS"].get("max"),
         ),
         (
             "spiro_atoms",
             rdMolDescriptors.CalcNumSpiroAtoms,
-            config["NUM_SPIRO_ATOMS"].getint("min"),
-            config["NUM_SPIRO_ATOMS"].getint("max"),
+            config["NUM_SPIRO_ATOMS"].get("min"),
+            config["NUM_SPIRO_ATOMS"].get("max"),
         ),
     ]
 
@@ -223,14 +223,15 @@ def filter_dataframe(df, config, verbose=False):
         df_copy["novelty_score"] = tanimoto_search_results.apply(lambda x: x[0])
         df_copy["closest_in_train"] = tanimoto_search_results.apply(lambda x: x[1])
 
-        df_copy = apply_filter(
-            df_copy,
-            "novelty_score",
-            lambda x: x,
-            config["NOVELTY_SCORE"].getfloat("min"),
-            config["NOVELTY_SCORE"].getfloat("max"),
-            verbose=verbose,
-        )
+        min_val = config["NOVELTY_SCORE"].get("min")
+        max_val = config["NOVELTY_SCORE"].get("max")
+
+        if min_val != "":
+            df = df[df["novelty_score"] >= float(min_val)]
+        if max_val != "":
+            df = df[df["novelty_score"] <= float(max_val)]
+        if verbose and (min_val != "" and max_val != ""):
+            print(f"Number of molecules after filtering by novelty_score: {len(df)}")
     else:
         if verbose:
             print("Skipping novelty filtering: clf_data_path not provided.")
