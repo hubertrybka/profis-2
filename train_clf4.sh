@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=classifier
+#SBATCH --job-name=classifier4
 #SBATCH --partition=dgx_regular
 #SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=32G
+#SBATCH --mem-per-cpu=16G
 source /raid/soft/miniconda/bin/activate
 conda init bash
 conda activate profis

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=classifier
+#SBATCH --job-name=classifier3
 #SBATCH --partition=dgx_regular
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=32G
