@@ -7,5 +7,7 @@
 source /raid/soft/miniconda/bin/activate
 conda init bash
 conda activate profis
-python get_aggregated_posterior.py -m models/eps1_dropout_ECFP/epoch_600.pt
-python get_aggregated_posterior.py -m models/eps1_dropout_KRFP/epoch_600.pt
+python get_aggregated_posterior.py -m models/ECFP_DeepSMILES/epoch_600.pt
+python get_aggregated_posterior.py -m models/KRFP_DeepSMILES/epoch_600.pt
+python get_aggregated_posterior.py -m models/ECFP_SELFIES/epoch_600.pt
+python get_aggregated_posterior.py -m models/KRFP_SELFIES/epoch_600.pt
