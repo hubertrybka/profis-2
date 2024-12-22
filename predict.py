@@ -85,7 +85,7 @@ def main(config_path):
 
     # filter dataframe
     if len(df) > 0:
-        df = filter_dataframe(df, config)
+        df = filter_dataframe(df, config, verbose=(True if verbosity > 0 else False))
     else:
         print("No valid predictions") if verbosity > 0 else None
 
