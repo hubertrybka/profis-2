@@ -10,6 +10,8 @@ from torch.utils.data import DataLoader
 from profis.tanimoto import TanimotoSearch
 from profis.dataset import load_charset
 from profis.utils import decode_seq_from_indexes
+import deepsmiles as ds
+import selfies as sf
 
 # Suppress RDKit warnings
 from rdkit import RDLogger
@@ -45,7 +47,6 @@ def predict(
     if not dropout:
         model.eval()
     with torch.no_grad():
-        df = pd.DataFrame(columns=["idx", "smiles"])
         preds_list = []
         for X in loader:
             latent_tensor = torch.Tensor(X).type(torch.FloatTensor).to(device)
@@ -54,18 +55,37 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
+        charset = load_charset(f'{encoding_format.lower()}_alphabet.txt')
+        sequences = []
+        for i in range(len(preds_concat)):
+            argmaxed = preds_concat[i].argmax(axis=1)
+            seq = decode_seq_from_indexes(argmaxed, charset).replace("[nop]", "")
+            sequences.append(seq)
+
+        smiles_converted = []
+
         if encoding_format == "smiles":
-            charset = load_charset()
-            for i in range(len(preds_concat)):
-                argmaxed = preds_concat[i].argmax(axis=1)
-                smiles = decode_seq_from_indexes(argmaxed, charset).replace("[nop]", "")
-                row = pd.DataFrame({"idx": i, "smiles": smiles}, index=[len(df)])
-                df = pd.concat([df, row])
+            smiles_converted = sequences
+
+        elif encoding_format == "deepsmiles":
+            converter = ds.Converter(rings=True, branches=True)
+            for deepsmiles in sequences:
+                try:
+                    smiles_converted.append(converter.decode(deepsmiles))
+                except ds.exceptions.DecodeError:
+                    continue
+
+        elif encoding_format == "selfies":
+            for selfies in sequences:
+                smiles_converted.append(sf.decoder(selfies))
+
         else:
             raise ValueError(
                 "Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'."
             )
 
+        df = pd.DataFrame(['idx', 'smiles'])
+        df['smiles'] = smiles_converted
         df["idx"] = range(len(df))
 
     return df
