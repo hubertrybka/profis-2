@@ -1,7 +1,0 @@
-smiles,score,time
-Oc1c(OCCc2cccc(F)c2)ncnn1,-8.07,6.225
-CCn1c(SC(C)=O)nc2nc(OC)c(OC)c(OC)c21,-6.45,7.385
-CC(C)(C)c1cccc(NC(=O)Nc2ccc(OC)cc2)c1,-8.74,7.519
-COC(=O)c1ccccc1NCc1cccc(OC)c1,-7.92,7.309
-C=CCOC1CCC(Cc2ccc(F)cc2)C1,-8.18,6.042
-CCOC(=O)c1ccc(OC)c2ccc(OCC)cc12,-6.44,6.606
