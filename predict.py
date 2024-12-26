@@ -95,31 +95,41 @@ def main(config_path):
     stats["mean_qed"] = df["qed"].mean()
 
     # save data as csv
-    os.mkdir(f"{dirname}/preds_{timestamp}")
-    with open(f"{dirname}/preds_{timestamp}/config.ini", "w") as configfile:
+    name = config["RUN"]["name"]
+    if name == "":
+        name = "predictions"
+    if config["RUN"].getboolean("add_timestamp"):
+        name += f"_{timestamp}"
+
+    # create a directory to save the data
+    os.mkdir(f"{dirname}/{name}")
+
+    # save data
+    with open(f"{dirname}/{name}/config.ini", "w") as configfile:
         config.write(configfile)
-    df.to_csv(f"{dirname}/preds_{timestamp}/predictions.csv", index=False)
+    df.to_csv(f"{dirname}/{name}/predictions.csv", index=False)
 
     (
-        print(f"Saved data to {dirname}/preds_{timestamp} directory")
+        print(f"Saved data to {dirname}/{name} directory")
         if verbosity > 0
         else None
     )
 
     # dump config
-    with open(f"{dirname}/preds_{timestamp}/config.ini", "w") as configfile:
+    with open(f"{dirname}/{name}/config.ini", "w") as configfile:
         config.write(configfile)
 
-    # save images
-    os.mkdir(f"{dirname}/preds_{timestamp}/imgs")
-    for n, (idx, smiles) in enumerate(zip(df["idx"], df["smiles"])):
-        mol = Chem.MolFromSmiles(smiles)
-        Draw.MolToFile(
-            mol, f"{dirname}/preds_{timestamp}/imgs/{idx}_{n}.png", size=(300, 300)
-        )
+    if config["RUN"].getboolean("draw_mols"):
+        # save images
+        os.mkdir(f"{dirname}/{name}/imgs")
+        for n, (idx, smiles) in enumerate(zip(df["idx"], df["smiles"])):
+            mol = Chem.MolFromSmiles(smiles)
+            Draw.MolToFile(
+                mol, f"{dirname}/{name}/imgs/{idx}_{n}.png", size=(300, 300)
+            )
 
     time_elapsed = time.time() - start_time
-    print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes")
+    print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes") if verbosity > 0 else None
 
     return
 
