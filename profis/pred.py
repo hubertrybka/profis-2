@@ -10,6 +10,9 @@ from torch.utils.data import DataLoader
 from profis.tanimoto import TanimotoSearch
 from profis.dataset import load_charset
 from profis.utils import decode_seq_from_indexes
+import deepsmiles as ds
+import selfies as sf
+from tqdm import tqdm
 
 # Suppress RDKit warnings
 from rdkit import RDLogger
@@ -23,7 +26,8 @@ def predict(
     device: torch.device = torch.device("cpu"),
     encoding_format: str = "smiles",
     batch_size: int = 64,
-    dropout = False
+    dropout=False,
+    show_progress=True,
 ):
     """
     Generate molecules from latent vectors
@@ -33,6 +37,8 @@ def predict(
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
         encoding_format: encoding format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
         batch_size: batch size for prediction.
+        dropout: whether to use dropout during prediction.
+        show_progress: whether to show progress bar.
 
     Returns:
         pd.DataFrame: Dataframe containing smiles and scores.
@@ -45,28 +51,46 @@ def predict(
     if not dropout:
         model.eval()
     with torch.no_grad():
-        df = pd.DataFrame(columns=["idx", "smiles"])
         preds_list = []
-        for X in loader:
+        for X in tqdm(loader) if show_progress else loader:
             latent_tensor = torch.Tensor(X).type(torch.FloatTensor).to(device)
             preds = model.decode(latent_tensor)
             preds = preds.detach().cpu().numpy()
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        if encoding_format == "smiles":
-            charset = load_charset()
-            for i in range(len(preds_concat)):
-                argmaxed = preds_concat[i].argmax(axis=1)
-                smiles = decode_seq_from_indexes(argmaxed, charset).replace(
-                    "[nop]", ""
-                )
-                row = pd.DataFrame({"idx": i, "smiles": smiles}, index=[len(df)])
-                df = pd.concat([df, row])
-        else:
-            raise ValueError("Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'.")
+        charset = load_charset(f'data/{encoding_format.lower()}_alphabet.txt')
+        sequences = []
+        for i in range(len(preds_concat)):
+            argmaxed = preds_concat[i].argmax(axis=1)
+            seq = decode_seq_from_indexes(argmaxed, charset).replace("[nop]", "")
+            sequences.append(seq)
 
-        df["idx"] = range(len(df))
+        smiles_converted = []
+
+        if encoding_format == "smiles":
+            smiles_converted = sequences
+
+        elif encoding_format == "deepsmiles":
+            converter = ds.Converter(rings=True, branches=True)
+            print("Converting DeepSMILES to SMILES...")
+            for deepsmiles in tqdm(sequences) if show_progress else sequences:
+                try:
+                    smiles_converted.append(converter.decode(deepsmiles))
+                except ds.exceptions.DecodeError:
+                    smiles_converted.append('Invalid SMILES')
+
+        elif encoding_format == "selfies":
+            print("Converting SELFIES to SMILES...")
+            for selfies in sequences:
+                smiles_converted.append(sf.decoder(selfies))
+
+        else:
+            raise ValueError(
+                "Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'."
+            )
+
+        df = pd.DataFrame({"idx": range(len(smiles_converted)), "smiles": smiles_converted})
 
     return df
 
@@ -109,146 +133,134 @@ def try_smiles2mol(smiles):
     except:
         return None
 
-def filter_dataframe(df, config):
+
+def apply_filter(df, column, func, min_val=None, max_val=None, verbose=False):
     """
-    Filters a dataframe of molecules based on the given configuration.
+    Applies a filter to a DataFrame based on a calculated column.
+
     Args:
-        df (pd.DataFrame): Dataframe containing molecules.
-        config (dict): Dictionary containing filtering parameters.
+        df (pd.DataFrame): DataFrame to filter.
+        column (str): Name of the new column to store calculated values.
+        func (callable): Function to calculate the column values.
+        min_val (float or int, optional): Minimum threshold for filtering.
+        max_val (float or int, optional): Maximum threshold for filtering.
+        verbose (bool): Whether to print debug information.
     Returns:
-        pd.DataFrame: Filtered dataframe.
+        pd.DataFrame: Filtered DataFrame.
+    """
+    df[column] = df["mols"].apply(func)
+    if min_val != "":
+        df = df[df[column] >= float(min_val)]
+    if max_val != "":
+        df = df[df[column] <= float(max_val)]
+    if verbose and (min_val != "" or max_val != ""):
+        print(f"Number of molecules after filtering by {column}: {len(df)}")
+    return df
+
+
+def filter_dataframe(df, config, verbose=False):
+    """
+    Filters a DataFrame of molecules based on the given configuration.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing molecules.
+        config (dict): Dictionary containing filtering parameters.
+        verbose (bool): Whether to print progress information.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame.
     """
     df_copy = df.copy()
     df_copy["mols"] = df_copy["smiles"].apply(Chem.MolFromSmiles)
     df_copy.dropna(axis=0, inplace=True, subset=["mols"])
 
-    # filter by largest ring
-    df_copy["largest_ring"] = df_copy["mols"].apply(get_largest_ring)
-    if config["RING_SIZE"]["min"]:
-        df_copy = df_copy[df_copy["largest_ring"] >= int(config["RING_SIZE"]["min"])]
-    if config["RING_SIZE"]["max"]:
-        df_copy = df_copy[df_copy["largest_ring"] <= int(config["RING_SIZE"]["max"])]
-    print(f"Number of molecules after filtering by ring size: {len(df_copy)}")
+    # Define filter configurations
+    filters = [
+        (
+            "largest_ring",
+            get_largest_ring,
+            config["RING_SIZE"].get("min"),
+            config["RING_SIZE"].get("max"),
+        ),
+        (
+            "num_rings",
+            Chem.rdMolDescriptors.CalcNumRings,
+            config["NUM_RINGS"].get("min"),
+            config["NUM_RINGS"].get("max"),
+        ),
+        ("qed", QED.default, config["QED"].get("min"), config["QED"].get("max")),
+        (
+            "mol_wt",
+            Chem.rdMolDescriptors.CalcExactMolWt,
+            config["MOL_WEIGHT"].get("min"),
+            config["MOL_WEIGHT"].get("max"),
+        ),
+        (
+            "num_HBA",
+            rdMolDescriptors.CalcNumHBA,
+            config["NUM_HBA"].get("min"),
+            config["NUM_HBA"].get("max"),
+        ),
+        (
+            "num_HBD",
+            rdMolDescriptors.CalcNumHBD,
+            config["NUM_HBD"].get("min"),
+            config["NUM_HBD"].get("max"),
+        ),
+        ("logP", Crippen.MolLogP, config["LOGP"].get("min"), config["LOGP"].get("max")),
+        (
+            "num_rotatable_bonds",
+            rdMolDescriptors.CalcNumRotatableBonds,
+            config["NUM_ROT_BONDS"].get("min"),
+            config["NUM_ROT_BONDS"].get("max"),
+        ),
+        (
+            "tpsa",
+            rdMolDescriptors.CalcTPSA,
+            config["TPSA"].get("min"),
+            config["TPSA"].get("max"),
+        ),
+        (
+            "bridgehead_atoms",
+            rdMolDescriptors.CalcNumBridgeheadAtoms,
+            config["NUM_BRIDGEHEAD_ATOMS"].get("min"),
+            config["NUM_BRIDGEHEAD_ATOMS"].get("max"),
+        ),
+        (
+            "spiro_atoms",
+            rdMolDescriptors.CalcNumSpiroAtoms,
+            config["NUM_SPIRO_ATOMS"].get("min"),
+            config["NUM_SPIRO_ATOMS"].get("max"),
+        ),
+    ]
 
-    # filter by num_rings
-    df_copy["num_rings"] = df_copy["mols"].apply(Chem.rdMolDescriptors.CalcNumRings)
-    if config["NUM_RINGS"]["min"]:
-        df_copy = df_copy[df_copy["num_rings"] >= int(config["NUM_RINGS"]["min"])]
-    if config["NUM_RINGS"]["max"]:
-        df_copy = df_copy[df_copy["num_rings"] <= int(config["NUM_RINGS"]["max"])]
-    print(f"Number of molecules after filtering by num_rings: {len(df_copy)}")
+    # Apply each filter
+    for column, func, min_val, max_val in filters:
+        df_copy = apply_filter(df_copy, column, func, min_val, max_val, verbose=verbose)
 
-    # filter by QED
-    df_copy["qed"] = df_copy["mols"].apply(QED.default)
-
-
-    # filter by mol_wt
-    df_copy["mol_wt"] = df_copy["mols"].apply(Chem.rdMolDescriptors.CalcExactMolWt)
-    if config["MOL_WEIGHT"]["min"]:
-        df_copy = df_copy[df_copy["mol_wt"] >= float(config["MOL_WEIGHT"]["min"])]
-    if config["MOL_WEIGHT"]["max"]:
-        df_copy = df_copy[df_copy["mol_wt"] <= float(config["MOL_WEIGHT"]["max"])]
-    print(f"Number of molecules after filtering by mol_wt: {len(df_copy)}")
-
-    # filter by num_HBA
-    df_copy["num_HBA"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumHBA)
-    if config["NUM_HBA"]["min"]:
-        df_copy = df_copy[df_copy["num_HBA"] >= int(config["NUM_HBA"]["min"])]
-    if config["NUM_HBA"]["max"]:
-        df_copy = df_copy[df_copy["num_HBA"] <= int(config["NUM_HBA"]["max"])]
-    print(f"Number of molecules after filtering by num_HBA: {len(df_copy)}")
-
-    # filter by num_HBD
-    df_copy["num_HBD"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumHBD)
-    if config["NUM_HBD"]["min"]:
-        df_copy = df_copy[df_copy["num_HBD"] >= int(config["NUM_HBD"]["min"])]
-    if config["NUM_HBD"]["max"]:
-        df_copy = df_copy[df_copy["num_HBD"] <= int(config["NUM_HBD"]["max"])]
-    print(f"Number of molecules after filtering by num_HBD: {len(df_copy)}")
-
-    # filter by logP
-    df_copy["logP"] = df_copy["mols"].apply(Crippen.MolLogP)
-    if config["LOGP"]["min"]:
-        df_copy = df_copy[df_copy["logP"] >= float(config["LOGP"]["min"])]
-    if config["LOGP"]["max"]:
-        df_copy = df_copy[df_copy["logP"] <= float(config["LOGP"]["max"])]
-    print(f"Number of molecules after filtering by logP: {len(df_copy)}")
-
-    # filter by num_rotatable_bonds
-    df_copy["num_rotatable_bonds"] = df_copy["mols"].apply(
-        rdMolDescriptors.CalcNumRotatableBonds
-    )
-    if config["NUM_ROT_BONDS"]["min"]:
-        df_copy = df_copy[
-            df_copy["num_rotatable_bonds"] >= int(config["NUM_ROTATABLE_BONDS"]["min"])
-        ]
-    if config["NUM_ROT_BONDS"]["max"]:
-        df_copy = df_copy[
-            df_copy["num_rotatable_bonds"] <= int(config["NUM_ROTATABLE_BONDS"]["max"])
-        ]
-    print(f"Number of molecules after filtering by num_rotatable_bonds: {len(df_copy)}")
-
-    # filter by TPSA
-    df_copy["tpsa"] = df_copy["mols"].apply(rdMolDescriptors.CalcTPSA)
-    if config["TPSA"]["min"]:
-        df_copy = df_copy[df_copy["tpsa"] >= float(config["TPSA"]["min"])]
-    if config["TPSA"]["max"]:
-        df_copy = df_copy[df_copy["tpsa"] <= float(config["TPSA"]["max"])]
-    print(f"Number of molecules after filtering by TPSA: {len(df_copy)}")
-
-    # filter by bridgehead atoms
-    df_copy["bridgehead_atoms"] = df_copy["mols"].apply(
-        rdMolDescriptors.CalcNumBridgeheadAtoms
-    )
-    if config["NUM_BRIDGEHEAD_ATOMS"]["min"]:
-        df_copy = df_copy[
-            df_copy["bridgehead_atoms"] >= int(config["NUM_BRIDGEHEAD_ATOMS"]["min"])
-        ]
-    if config["NUM_BRIDGEHEAD_ATOMS"]["max"]:
-        df_copy = df_copy[
-            df_copy["bridgehead_atoms"] <= int(config["NUM_BRIDGEHEAD_ATOMS"]["max"])
-        ]
-    print(f"Number of molecules after filtering by bridgehead atoms: {len(df_copy)}")
-
-    # filter by spiro atoms
-    df_copy["spiro_atoms"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumSpiroAtoms)
-    if config["NUM_SPIRO_ATOMS"]["min"]:
-        df_copy = df_copy[
-            df_copy["spiro_atoms"] >= int(config["NUM_SPIRO_ATOMS"]["min"])
-        ]
-    if config["NUM_SPIRO_ATOMS"]["max"]:
-        df_copy = df_copy[
-            df_copy["spiro_atoms"] <= int(config["NUM_SPIRO_ATOMS"]["max"])
-        ]
-    print(f"Number of molecules after filtering by spiro atoms: {len(df_copy)}")
-
-    # filter by novelty score
-    if config["RUN"]["clf_data_path"] is not None:
+    # Handle novelty score separately
+    if config["RUN"].get("clf_data_path"):
         ts = TanimotoSearch(config["RUN"]["clf_data_path"])
-
         tanimoto_search_results = df_copy["smiles"].apply(
             lambda x: ts(x, return_similar=True)
         )
-
         df_copy["novelty_score"] = tanimoto_search_results.apply(lambda x: x[0])
         df_copy["closest_in_train"] = tanimoto_search_results.apply(lambda x: x[1])
 
-        if config["NOVELTY_SCORE"]["min"]:
-            df_copy = df_copy[
-                df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
-            ]
-        if config["NOVELTY_SCORE"]["max"]:
-            df_copy = df_copy[
-                df_copy["novelty_score"] <= int(config["NOVELTY_SCORE"]["max"])
-            ]
-        print(f"Number of molecules after filtering by novelty score: {len(df_copy)}")
+        min_val = config["NOVELTY_SCORE"].get("min")
+        max_val = config["NOVELTY_SCORE"].get("max")
 
+        if min_val != "":
+            df = df[df["novelty_score"] >= float(min_val)]
+        if max_val != "":
+            df = df[df["novelty_score"] <= float(max_val)]
+        if verbose and (min_val != "" and max_val != ""):
+            print(f"Number of molecules after filtering by novelty_score: {len(df)}") if verbose else None
     else:
-        print(
-            "Path to the QSAR model training set is not provided or invalid. Skipping novelty filtering."
-        )
+        if verbose:
+            print("Skipping novelty filtering: clf_data_path not provided.") if verbose else None
 
-    # drop redundant columns
+    # Drop redundant columns
     df_copy.drop(columns=["mols"], inplace=True)
 
     return df_copy

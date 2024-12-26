@@ -9,13 +9,12 @@ import argparse
 import os
 import time
 from profis.utils import (
-    Annealer,
     load_charset,
     initialize_profis,
-    is_valid,
+    ValidityChecker,
     decode_seq_from_indexes,
 )
-from profis.net import VaeLoss
+from profis.net import VaeLoss, Annealer
 from profis.dataset import ProfisDataset, DeepSmilesDataset, SelfiesDataset
 
 
@@ -33,6 +32,7 @@ def train(
 ):
 
     charset = load_charset(f"data/{out_encoding}_alphabet.txt")
+    is_valid = ValidityChecker(out_encoding)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print("Using device:", device)
@@ -89,12 +89,12 @@ def train(
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
         val_outputs = torch.cat(val_outputs, dim=0).numpy()
-        val_out_smiles = [
+        val_out_seq = [
             decode_seq_from_indexes(out.argmax(axis=1), charset) for out in val_outputs
         ]
-        val_out_smiles = [smile.replace("[nop]", "") for smile in val_out_smiles]
-        valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]
-        mean_valid = len(valid_smiles) / len(val_out_smiles)
+        val_out_seq = [seq.replace("[nop]", "") for seq in val_out_seq]
+        valid_seq = [seq for seq in val_out_seq if is_valid(seq)]
+        mean_valid = len(valid_seq) / len(val_out_seq)
 
         wandb.log(
             {"train_loss": train_loss, "val_loss": val_loss, "validity": mean_valid}

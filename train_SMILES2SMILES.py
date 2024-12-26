@@ -14,8 +14,7 @@ from profis.dataset import (
     decode_smiles_from_indexes,
     Smiles2SmilesDataset,
 )
-from profis.utils import Annealer
-from profis.net import MolecularVAE, VaeLoss, CEVAELoss
+from profis.net import MolecularVAE, VaeLoss, CEVAELoss, Annealer
 
 
 def is_valid(smiles):

@@ -14,7 +14,7 @@ class TanimotoSearch:
 
     def __init__(self, data_path, verbose=False):
         self.data_path = data_path
-        self.smiles = pd.read_parquet(data_path)["smiles"]
+        self.smiles = pd.read_parquet(data_path)["smiles"].reset_index(drop=True)
         self.XB = np.array([smiles2sparse_ECFP(x, 512) for x in self.smiles]).reshape(
             -1, 512
         )
@@ -22,7 +22,7 @@ class TanimotoSearch:
 
     def __call__(self, smiles, return_similar=False):
         XA = smiles2sparse_ECFP(smiles, 512).reshape(1, -1)
-        dists = cdist(XA, self.XB, "jaccard")
+        dists = cdist(XA, self.XB, "jaccard").flatten()
         min_dist = np.min(dists)
         top1_similar_smiles = self.smiles[np.argmin(dists)]
         (
@@ -41,7 +41,9 @@ class TanimotoSearch:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Search for the most similar molecule in a dataset")
+    parser = argparse.ArgumentParser(
+        description="Search for the most similar molecule in a dataset"
+    )
     parser.add_argument(
         "-d", "--data_path", type=str, help="Path to the classifier training set"
     )

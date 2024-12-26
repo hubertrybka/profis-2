@@ -133,7 +133,7 @@ class SelfiesDataset(ProfisDataset):
     """
 
     def __init__(self, df, fp_len=2048):
-        sf.set_semantic_constraints('hypervalent')
+        sf.set_semantic_constraints("hypervalent")
         super().__init__(df, fp_len, charset_path="data/selfies_alphabet.txt")
 
     def prepare_y(self, seq):
