@@ -68,7 +68,7 @@ def decode_random_samples(model, samples, encoding_format, device):
     from profis.dataset import load_charset
     from profis.utils import decode_seq_from_indexes
 
-    charset = load_charset(f'data/{encoding_format.lower()}_charset.txt')
+    charset = load_charset(f'data/{encoding_format.lower()}_alphabet.txt')
 
     smiles_strings = []
     converter = ds.Converter(rings=True, branches=True)
