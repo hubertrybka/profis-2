@@ -56,7 +56,7 @@ def main(config_path):
 
     model = initialize_profis(config_path=model_config_path).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
-    print(f"Loaded model from {model_path}") if verbosity > 1 else None
+    print(f"Loaded model from {model_path}") if verbosity >= 1 else None
 
     # load data
     if file_path.endswith(".csv"):
@@ -70,10 +70,10 @@ def main(config_path):
         if col in query_df.columns:
             query_df = query_df.drop(columns=[col])
     input_vector = query_df.to_numpy()
-    print(f"Loaded data from {file_path}") if verbosity > 1 else None
+    print(f"Loaded data from {file_path}") if verbosity >= 1 else None
 
     # get predictions
-    print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
+    print(f"Getting predictions for file {file_path}...") if verbosity >= 1 else None
     df = predict(
         model,
         input_vector,
@@ -81,6 +81,7 @@ def main(config_path):
         encoding_format=out_encoding,
         batch_size=batch_size,
         dropout=config["RUN"].getboolean("dropout"),
+        show_progress=config["RUN"].getboolean("show_progress"),
     )
 
     # filter dataframe

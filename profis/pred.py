@@ -12,6 +12,7 @@ from profis.dataset import load_charset
 from profis.utils import decode_seq_from_indexes
 import deepsmiles as ds
 import selfies as sf
+from tqdm import tqdm
 
 # Suppress RDKit warnings
 from rdkit import RDLogger
@@ -26,6 +27,7 @@ def predict(
     encoding_format: str = "smiles",
     batch_size: int = 64,
     dropout=False,
+    show_progress=True,
 ):
     """
     Generate molecules from latent vectors
@@ -35,6 +37,8 @@ def predict(
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
         encoding_format: encoding format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
         batch_size: batch size for prediction.
+        dropout: whether to use dropout during prediction.
+        show_progress: whether to show progress bar.
 
     Returns:
         pd.DataFrame: Dataframe containing smiles and scores.
@@ -48,14 +52,14 @@ def predict(
         model.eval()
     with torch.no_grad():
         preds_list = []
-        for X in loader:
+        for X in tqdm(loader) if show_progress else loader:
             latent_tensor = torch.Tensor(X).type(torch.FloatTensor).to(device)
             preds = model.decode(latent_tensor)
             preds = preds.detach().cpu().numpy()
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        charset = load_charset(f'{encoding_format.lower()}_alphabet.txt')
+        charset = load_charset(f'data/{encoding_format.lower()}_alphabet.txt')
         sequences = []
         for i in range(len(preds_concat)):
             argmaxed = preds_concat[i].argmax(axis=1)
@@ -69,13 +73,15 @@ def predict(
 
         elif encoding_format == "deepsmiles":
             converter = ds.Converter(rings=True, branches=True)
-            for deepsmiles in sequences:
+            print("Converting DeepSMILES to SMILES...")
+            for deepsmiles in tqdm(sequences) if show_progress else sequences:
                 try:
                     smiles_converted.append(converter.decode(deepsmiles))
                 except ds.exceptions.DecodeError:
-                    continue
+                    smiles_converted.append('Invalid SMILES')
 
         elif encoding_format == "selfies":
+            print("Converting SELFIES to SMILES...")
             for selfies in sequences:
                 smiles_converted.append(sf.decoder(selfies))
 
@@ -84,9 +90,7 @@ def predict(
                 "Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'."
             )
 
-        df = pd.DataFrame(['idx', 'smiles'])
-        df['smiles'] = smiles_converted
-        df["idx"] = range(len(df))
+        df = pd.DataFrame({"idx": range(len(smiles_converted)), "smiles": smiles_converted})
 
     return df
 
@@ -149,7 +153,7 @@ def apply_filter(df, column, func, min_val=None, max_val=None, verbose=False):
         df = df[df[column] >= float(min_val)]
     if max_val != "":
         df = df[df[column] <= float(max_val)]
-    if verbose and (min_val != "" and max_val != ""):
+    if verbose and (min_val != "" or max_val != ""):
         print(f"Number of molecules after filtering by {column}: {len(df)}")
     return df
 
@@ -161,7 +165,7 @@ def filter_dataframe(df, config, verbose=False):
     Args:
         df (pd.DataFrame): DataFrame containing molecules.
         config (dict): Dictionary containing filtering parameters.
-        verbose (bool): Whether to print debug information.
+        verbose (bool): Whether to print progress information.
 
     Returns:
         pd.DataFrame: Filtered DataFrame.
@@ -251,10 +255,10 @@ def filter_dataframe(df, config, verbose=False):
         if max_val != "":
             df = df[df["novelty_score"] <= float(max_val)]
         if verbose and (min_val != "" and max_val != ""):
-            print(f"Number of molecules after filtering by novelty_score: {len(df)}")
+            print(f"Number of molecules after filtering by novelty_score: {len(df)}") if verbose else None
     else:
         if verbose:
-            print("Skipping novelty filtering: clf_data_path not provided.")
+            print("Skipping novelty filtering: clf_data_path not provided.") if verbose else None
 
     # Drop redundant columns
     df_copy.drop(columns=["mols"], inplace=True)
