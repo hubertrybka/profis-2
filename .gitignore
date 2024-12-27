@@ -3,8 +3,8 @@
 /results
 /imgs
 /docking
+/analysis
 *.parquet
-wandb/debug-internal.log
 *.log
 *.sdf
 *.pdbqt
