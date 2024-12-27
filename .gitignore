@@ -2,7 +2,7 @@
 /models
 /results
 /imgs
-
+/docking
 *.parquet
 wandb/debug-internal.log
 *.log
