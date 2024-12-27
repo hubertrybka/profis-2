@@ -195,3 +195,14 @@ class Smiles2SmilesDataset(Dataset):
             r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
         )
         return re.findall(pattern, smile)
+
+class NoisyProfisDataset(ProfisDataset):
+
+    def __init__(self, df, fp_len=2048, charset_path="data/smiles_alphabet.txt", noise=0.1):
+        super().__init__(df, fp_len, charset_path)
+        self.noise = noise
+
+    def reconstruct_fp(self, fp):
+        fp_rec = np.zeros(self.fp_len)
+        fp_rec[fp] = 1
+        return fp_rec + np.random.normal(0, self.noise, self.fp_len)
