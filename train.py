@@ -46,6 +46,8 @@ def train(
         model.train()
         train_loss = 0
         mean_kld_loss = 0
+        mean_recon_loss = 0
+        annealed_kld_loss = 0
         for batch_idx, data in (
             enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader)
         ):
@@ -59,9 +61,13 @@ def train(
             loss.backward()
             train_loss += loss.item()
             kld_loss += kld_loss.item()
+            annealed_kld_loss += annealer(kld_loss).item()
+            mean_recon_loss += recon_loss.item()
             optimizer.step()
         train_loss /= len(train_loader)
         mean_kld_loss /= len(train_loader)
+        mean_recon_loss /= len(train_loader)
+        annealed_kld_loss /= len(train_loader)
 
         model.eval()
         val_loss = 0
@@ -98,7 +104,12 @@ def train(
         mean_valid = len(valid_seq) / len(val_out_seq)
         annealer.step()
         wandb.log(
-            {"train_loss": train_loss, "val_loss": val_loss, "validity": mean_valid}
+            {"train_loss": train_loss,
+             "val_loss": val_loss,
+             "validity": mean_valid,
+             "kld_loss_train": mean_kld_loss,
+             "recon_loss_train": mean_recon_loss,
+             "annealed_kld_loss": annealed_kld_loss}
         )
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
