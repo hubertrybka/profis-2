@@ -36,7 +36,7 @@ def train(
 ):
 
     charset = load_charset()
-    annealer = Annealer(30, "cosine", baseline=0.0, disable=disable_annealing)
+    annealer = Annealer(30, "cosine", baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print("Using device:", device)
 
@@ -106,7 +106,7 @@ def train(
              "kld_loss_train": mean_kld_loss},
         )
 
-        annealer.step()
+        annealer.step() if disable_annealing is False else None
 
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
