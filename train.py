@@ -112,6 +112,9 @@ def train(
 
 if __name__ == "__main__":
 
+    from rdkit import RDLogger
+    RDLogger.DisableLog('rdApp.*')
+
     # Parse the path to the config file
     argparser = argparse.ArgumentParser()
     argparser.add_argument(

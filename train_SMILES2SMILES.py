@@ -32,10 +32,11 @@ def train(
     device="cuda",
     lr=0.0004,
     print_progress=False,
+    disable_annealing=False
 ):
 
     charset = load_charset()
-    annealer = Annealer(30, "cosine", baseline=0.0)
+    annealer = Annealer(30, "cosine", baseline=0.0, disable=disable_annealing)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print("Using device:", device)
 
@@ -55,11 +56,11 @@ def train(
             optimizer.zero_grad()
             output, mean, logvar = model(X)
             recon_loss, kld_loss = criterion(output, X, mean, logvar)
-            loss = recon_loss + annealer(kld_loss)
+            loss = recon_loss + 0.01 * annealer(kld_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
-            kld_loss += kld_loss.item()
+            mean_kld_loss += kld_loss.item()
             optimizer.step()
         train_loss /= len(train_loader)
         mean_kld_loss /= len(train_loader)
@@ -97,11 +98,16 @@ def train(
         valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]
         mean_valid = len(valid_smiles) / len(val_out_smiles)
 
+        wandb.log(
+            {"train_loss": train_loss,
+             "val_loss": val_loss,
+             "validity": mean_valid,
+             "annealing": annealer(1),
+             "kld_loss_train": mean_kld_loss},
+        )
+
         annealer.step()
 
-        wandb.log(
-            {"train_loss": train_loss, "val_loss": val_loss, "validity": mean_valid}
-        )
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
 
@@ -110,6 +116,8 @@ def train(
 
     return model
 
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
@@ -123,6 +131,7 @@ argparser.add_argument("--name", type=str, default="profis")
 argparser.add_argument("--eps_coef", type=float, default=0.01)
 argparser.add_argument("--dropout", type=float, default=0.2)
 argparser.add_argument("--latent_size", type=int, default=32)
+argparser.add_argument("--disable_annealing", action="store_true")
 args = argparser.parse_args()
 
 wandb.init(project="profis2", name=args.name, config=args)
@@ -157,5 +166,6 @@ model = train(
     epochs,
     device,
     lr=args.lr,
-    print_progress=False,
+    print_progress=True,
+    disable_annealing=args.disable_annealing,
 )
