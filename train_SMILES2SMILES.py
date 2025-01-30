@@ -32,7 +32,8 @@ def train(
     device="cuda",
     lr=0.0004,
     print_progress=False,
-    disable_annealing=False
+    disable_annealing=False,
+    beta=1.0
 ):
     charset = load_charset()
     annealer = Annealer(50, "cosine", baseline=0.0)
@@ -57,7 +58,7 @@ def train(
             optimizer.zero_grad()
             output, mean, logvar = model(X)
             recon_loss, kld_loss = criterion(output, X, mean, logvar)
-            loss = recon_loss + annealer(kld_loss)
+            loss = recon_loss + beta * annealer(kld_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
@@ -139,6 +140,7 @@ argparser.add_argument("--eps_coef", type=float, default=0.01)
 argparser.add_argument("--dropout", type=float, default=0.2)
 argparser.add_argument("--latent_size", type=int, default=32)
 argparser.add_argument("--disable_annealing", action="store_true", default=False)
+argparser.add_argument("--beta", type=float, default=1.0)
 args = argparser.parse_args()
 
 wandb.init(project="profis2", name=args.name, config=args)
@@ -175,4 +177,5 @@ model = train(
     lr=args.lr,
     print_progress=True,
     disable_annealing=args.disable_annealing,
+    beta=args.beta
 )

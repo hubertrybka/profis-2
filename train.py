@@ -26,6 +26,7 @@ def train(
     epochs=100,
     device="cpu",
     lr=0.0001,
+    beta=1,
     name="profis",
     out_encoding="smiles",
     print_progress=False,
@@ -57,7 +58,7 @@ def train(
             optimizer.zero_grad()
             output, mean, logvar = model(X)
             recon_loss, kld_loss = criterion(output, y, mean, logvar)
-            loss = recon_loss + annealer(kld_loss)
+            loss = recon_loss + beta * annealer(kld_loss)
             loss.backward()
             train_loss += loss.item()
             kld_loss += kld_loss.item()
@@ -221,6 +222,7 @@ if __name__ == "__main__":
         device=device,
         lr=float(parser["RUN"]["learn_rate"]),
         name=model_name,
+        beta=float(parser["RUN"]["beta"]),
         out_encoding=parser["RUN"]["out_encoding"],
         print_progress=False,
     )
