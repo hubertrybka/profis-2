@@ -77,7 +77,7 @@ def train(
         for batch_idx, data in enumerate(val_loader):
             X = data.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 50 == 0:
+            if batch_idx % 100 == 0:
                 print(
                     "Input:",
                     decode_seq_from_indexes(
