@@ -35,6 +35,8 @@ def train(
     disable_annealing=False
 ):
 
+    beta = 0.01
+
     charset = load_charset()
     annealer = Annealer(30, "cosine", baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -49,6 +51,7 @@ def train(
         model.train()
         train_loss = 0
         mean_kld_loss = 0
+        mean_recon_loss = 0
         for batch_idx, data in (
             enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader)
         ):
@@ -56,14 +59,16 @@ def train(
             optimizer.zero_grad()
             output, mean, logvar = model(X)
             recon_loss, kld_loss = criterion(output, X, mean, logvar)
-            loss = recon_loss + 0.01 * annealer(kld_loss)
+            loss = recon_loss + beta * annealer(kld_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
-            mean_kld_loss += kld_loss.item()
+            mean_recon_loss += recon_loss.item()
+            mean_kld_loss += beta * kld_loss.item()
             optimizer.step()
         train_loss /= len(train_loader)
         mean_kld_loss /= len(train_loader)
+        mean_recon_loss /= len(train_loader)
 
         model.eval()
         val_loss = 0
@@ -103,6 +108,7 @@ def train(
              "val_loss": val_loss,
              "validity": mean_valid,
              "annealing": annealer(1),
+             "recon_loss_train": mean_recon_loss,
              "kld_loss_train": mean_kld_loss},
         )
 
