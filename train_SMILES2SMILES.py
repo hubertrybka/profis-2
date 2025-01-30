@@ -11,10 +11,10 @@ import os
 import time
 from profis.dataset import (
     load_charset,
-    decode_smiles_from_indexes,
-    Smiles2SmilesDataset,
+    Smiles2SmilesDataset
 )
-from profis.net import MolecularVAE, VaeLoss, CEVAELoss, Annealer
+from profis.utils import decode_seq_from_indexes
+from profis.net import MolecularVAE, VaeLoss, Annealer
 
 
 def is_valid(smiles):
@@ -73,28 +73,31 @@ def train(
             if batch_idx % 50 == 0:
                 print(
                     "Input:",
-                    decode_smiles_from_indexes(
+                    decode_seq_from_indexes(
                         X[0].argmax(dim=1).cpu().numpy(), charset
                     ).replace("[nop]", ""),
                 )
                 print(
                     "Output:",
-                    decode_smiles_from_indexes(
+                    decode_seq_from_indexes(
                         output[0].argmax(dim=1).cpu().numpy(), charset
                     ).replace("[nop]", ""),
                 )
-            loss, _ = criterion(output, X, mean, logvar)
+            recon_loss, kld_loss = criterion(output, X, mean, logvar)
+            loss = recon_loss + annealer(kld_loss)
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
         val_outputs = torch.cat(val_outputs, dim=0).numpy()
         val_out_smiles = [
-            decode_smiles_from_indexes(out.argmax(axis=1), charset)
+            decode_seq_from_indexes(out.argmax(axis=1), charset)
             for out in val_outputs
         ]
         val_out_smiles = [smile.replace("[nop]", "") for smile in val_out_smiles]
         valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]
         mean_valid = len(valid_smiles) / len(val_out_smiles)
+
+        annealer.step()
 
         wandb.log(
             {"train_loss": train_loss, "val_loss": val_loss, "validity": mean_valid}
@@ -155,5 +158,4 @@ model = train(
     device,
     lr=args.lr,
     print_progress=False,
-    ignore_nop=args.ignore_nop,
 )
