@@ -34,11 +34,8 @@ def train(
     print_progress=False,
     disable_annealing=False
 ):
-
-    beta = 0.01
-
     charset = load_charset()
-    annealer = Annealer(30, "cosine", baseline=0.0)
+    annealer = Annealer(50, "cosine", baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print("Using device:", device)
 
@@ -52,6 +49,7 @@ def train(
         train_loss = 0
         mean_kld_loss = 0
         mean_recon_loss = 0
+        annealed_kld_loss = 0
         for batch_idx, data in (
             enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader)
         ):
@@ -59,16 +57,18 @@ def train(
             optimizer.zero_grad()
             output, mean, logvar = model(X)
             recon_loss, kld_loss = criterion(output, X, mean, logvar)
-            loss = recon_loss + beta * annealer(kld_loss)
+            loss = recon_loss + annealer(kld_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
             mean_recon_loss += recon_loss.item()
-            mean_kld_loss += beta * kld_loss.item()
+            mean_kld_loss += kld_loss.item()
+            annealed_kld_loss += annealer(kld_loss).item()
             optimizer.step()
         train_loss /= len(train_loader)
         mean_kld_loss /= len(train_loader)
         mean_recon_loss /= len(train_loader)
+        annealed_kld_loss /= len(train_loader)
 
         model.eval()
         val_loss = 0
@@ -109,10 +109,11 @@ def train(
              "validity": mean_valid,
              "annealing": annealer(1),
              "recon_loss_train": mean_recon_loss,
-             "kld_loss_train": mean_kld_loss},
+             "kld_loss_train": mean_kld_loss,
+             "annealed_kld_loss": annealed_kld_loss}
         )
 
-        annealer.step() if disable_annealing is False else None
+        None if disable_annealing else annealer.step()
 
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
@@ -137,7 +138,7 @@ argparser.add_argument("--name", type=str, default="profis")
 argparser.add_argument("--eps_coef", type=float, default=0.01)
 argparser.add_argument("--dropout", type=float, default=0.2)
 argparser.add_argument("--latent_size", type=int, default=32)
-argparser.add_argument("--disable_annealing", action="store_true")
+argparser.add_argument("--disable_annealing", action="store_true", default=False)
 args = argparser.parse_args()
 
 wandb.init(project="profis2", name=args.name, config=args)
