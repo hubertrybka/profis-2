@@ -84,7 +84,8 @@ def train(
                         output[0].argmax(dim=1).cpu().numpy(), charset
                     ).replace("[nop]", ""),
                 )
-            loss, _ = criterion(output, y, mean, logvar)
+            loss, kld_loss = criterion(output, y, mean, logvar)
+            loss = loss + annealer(kld_loss)
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
@@ -95,7 +96,7 @@ def train(
         val_out_seq = [seq.replace("[nop]", "") for seq in val_out_seq]
         valid_seq = [seq for seq in val_out_seq if is_valid(seq)]
         mean_valid = len(valid_seq) / len(val_out_seq)
-
+        annealer.step()
         wandb.log(
             {"train_loss": train_loss, "val_loss": val_loss, "validity": mean_valid}
         )
