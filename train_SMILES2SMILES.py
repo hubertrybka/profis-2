@@ -177,5 +177,5 @@ model = train(
     lr=args.lr,
     print_progress=True,
     disable_annealing=args.disable_annealing,
-    beta=args.beta
+    beta=float(args.beta)
 )

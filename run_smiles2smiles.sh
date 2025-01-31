@@ -8,4 +8,4 @@ source /raid/soft/miniconda/bin/activate
 conda init bash
 conda activate profis
 wandb login 505ce3ad45fdf9309c3d8ec1d9764262ae6929c1
-python train_SMILES2SMILES.py --epochs 600 --batch_size 512 --lr 0.0008 --name smiles2smiles_anneal --eps_coef 1 --latent_size 32 --beta 0.01
+python train_SMILES2SMILES.py --epochs 600 --batch_size 512 --lr 0.0004 --name smiles2smiles_anneal --eps_coef 1 --latent_size 32 --beta 0.01
