@@ -26,7 +26,7 @@ def train(
     epochs=100,
     device="cpu",
     lr=0.0001,
-    beta=1,
+    beta=1.0,
     name="profis",
     out_encoding="smiles",
     print_progress=False,
@@ -61,7 +61,7 @@ def train(
             loss = recon_loss + beta * annealer(kld_loss)
             loss.backward()
             train_loss += loss.item()
-            kld_loss += kld_loss.item()
+            mean_kld_loss += kld_loss.item()
             annealed_kld_loss += annealer(kld_loss).item()
             mean_recon_loss += recon_loss.item()
             optimizer.step()
