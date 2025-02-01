@@ -1,5 +1,6 @@
 import torch
 import torch.utils.data
+import torch.nn as nn
 import pandas as pd
 import torch.optim as optim
 import wandb
@@ -60,6 +61,7 @@ def train(
             recon_loss, kld_loss = criterion(output, y, mean, logvar)
             loss = recon_loss + beta * annealer(kld_loss)
             loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             train_loss += loss.item()
             mean_kld_loss += kld_loss.item()
             annealed_kld_loss += annealer(kld_loss).item()
