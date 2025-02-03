@@ -175,7 +175,7 @@ model = train(
     epochs,
     device,
     lr=args.lr,
-    print_progress=True,
+    print_progress=False,
     disable_annealing=args.disable_annealing,
     beta=float(args.beta)
 )
