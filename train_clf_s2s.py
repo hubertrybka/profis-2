@@ -71,7 +71,7 @@ def main(config_path, verbose=True):
     big_model.load_state_dict(torch.load(model_path, map_location=device))
 
     dataset = Smiles2SmilesDataset(data)
-    dataloader = DataLoader(dataset, batch_size=256, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=512, shuffle=False)
 
     mus = []
     big_model.eval()
