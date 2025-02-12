@@ -95,14 +95,16 @@ def train(
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
-        val_outputs = torch.cat(val_outputs, dim=0).numpy()
-        val_out_smiles = [
-            decode_seq_from_indexes(out.argmax(axis=1), charset)
-            for out in val_outputs
-        ]
-        val_out_smiles = [smile.replace("[nop]", "") for smile in val_out_smiles]
-        valid_smiles = [smile for smile in val_out_smiles if is_valid(smile)]
-        mean_valid = len(valid_smiles) / len(val_out_smiles)
+
+        # Decode example SMILES
+        output_smiles = decode_seq_from_output(val_outputs, charset)
+        valid_seqs, mean_valid = validate_seqs(output_smiles, is_valid)
+
+        # Try to sample from the latent space and decode
+        latent_space = torch.randn(10000, 32).to(device)
+        output = model.decode(latent_space)
+        output_smiles = decode_seq_from_output(output, charset)
+        sampled_seqs, sampled_valid = validate_seqs(output_smiles, is_valid)
 
         wandb.log(
             {"train_loss": train_loss,
@@ -123,6 +125,20 @@ def train(
             torch.save(model.state_dict(), f"models/{args.name}/epoch_{epoch}.pt")
 
     return model
+
+def decode_seq_from_output(output, charset):
+    output = torch.cat(output, dim=0).numpy()
+    out_seq = [
+        decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output
+    ]
+    # Remove the [nop] tokens
+    output_smiles = [seq.replace("[nop]", "") for seq in out_seq]
+    return output_smiles
+
+def validate_seqs(seq_list, is_valid):
+    valid_seqs = [seq for seq in seq_list if is_valid(seq)]
+    validity = len(valid_seqs) / len(seq_list)
+    return valid_seqs, validity
 
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')

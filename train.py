@@ -50,6 +50,9 @@ def train(
         mean_kld_loss = 0
         mean_recon_loss = 0
         annealed_kld_loss = 0
+
+        # train loop
+
         for batch_idx, data in (
             enumerate(tqdm(train_loader)) if print_progress else enumerate(train_loader)
         ):
@@ -80,31 +83,22 @@ def train(
             X = X.to(device)
             y = y.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 100 == 0:
-                print(
-                    "Input:",
-                    decode_seq_from_indexes(
-                        y[0].argmax(dim=1).cpu().numpy(), charset
-                    ).replace("[nop]", ""),
-                )
-                print(
-                    "Output:",
-                    decode_seq_from_indexes(
-                        output[0].argmax(dim=1).cpu().numpy(), charset
-                    ).replace("[nop]", ""),
-                )
             loss, kld_loss = criterion(output, y, mean, logvar)
             loss = loss + annealer(kld_loss)
             val_loss += loss.item()
             val_outputs.append(output.detach().cpu())
         val_loss /= len(val_loader)
-        val_outputs = torch.cat(val_outputs, dim=0).numpy()
-        val_out_seq = [
-            decode_seq_from_indexes(out.argmax(axis=1), charset) for out in val_outputs
-        ]
-        val_out_seq = [seq.replace("[nop]", "") for seq in val_out_seq]
-        valid_seq = [seq for seq in val_out_seq if is_valid(seq)]
-        mean_valid = len(valid_seq) / len(val_out_seq)
+
+        # Decode example SMILES
+        output_smiles = decode_seq_from_output(val_outputs, charset)
+        valid_seqs, mean_valid = validate_seqs(output_smiles, is_valid)
+
+        # Try to sample from the latent space and decode
+        latent_space = torch.randn(10000, 32).to(device)
+        output = model.decode(latent_space)
+        output_smiles = decode_seq_from_output(output, charset)
+        sampled_seqs, sampled_valid = validate_seqs(output_smiles, is_valid)
+
         annealer.step()
         wandb.log(
             {"train_loss": train_loss,
@@ -112,7 +106,11 @@ def train(
              "validity": mean_valid,
              "kld_loss_train": mean_kld_loss,
              "recon_loss_train": mean_recon_loss,
-             "annealed_kld_loss": annealed_kld_loss}
+             "annealed_kld_loss": annealed_kld_loss,
+             "output_smiles": output_smiles[:16],
+             "sampling_validity": sampled_valid,
+             "sampled_seqs": sampled_seqs[:16]
+             }
         )
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
@@ -123,6 +121,19 @@ def train(
 
     return model
 
+def decode_seq_from_output(output, charset):
+    output = torch.cat(output, dim=0).numpy()
+    out_seq = [
+        decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output
+    ]
+    # Remove the [nop] tokens
+    output_smiles = [seq.replace("[nop]", "") for seq in out_seq]
+    return output_smiles
+
+def validate_seqs(seq_list, is_valid):
+    valid_seqs = [seq for seq in seq_list if is_valid(seq)]
+    validity = len(valid_seqs) / len(seq_list)
+    return valid_seqs, validity
 
 if __name__ == "__main__":
 
