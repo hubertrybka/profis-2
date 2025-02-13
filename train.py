@@ -204,7 +204,7 @@ if __name__ == "__main__":
     model_name = parser["RUN"]["run_name"]
     if os.path.exists(f"models/{model_name}") is False:
         os.makedirs(f"models/{model_name}")
-    elif args.overwrite_model_dir:
+    elif overwrite_model_dir:
         pass
     else:
         raise ValueError(f"Model directory of the name {model_name} already exists")
