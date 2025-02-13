@@ -99,8 +99,11 @@ def train(
         output = model.decode(latent_space).detach().cpu().numpy()
         output_seqs = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_validity = validate_seqs(output_seqs, is_valid)
+        output_smiles = pd.DataFrame({"smiles": output_smiles[:64]})
+        sampled_seqs = pd.DataFrame({"smiles": sampled_seqs[:64]})
 
         annealer.step()
+
         wandb.log(
             {"train_loss": train_loss,
              "val_loss": val_loss,
@@ -108,9 +111,9 @@ def train(
              "kld_loss_train": mean_kld_loss,
              "recon_loss_train": mean_recon_loss,
              "annealed_kld_loss": annealed_kld_loss,
-             "output_smiles": output_smiles[:16],
+             "output_smiles": wandb.Table(dataframe=output_smiles),
              "sampling_validity": sampled_validity,
-             "sampled_seqs": sampled_seqs[:16]
+             "sampled_seqs": wandb.Table(dataframe=sampled_seqs)
              }
         )
         end_time = time.time()
