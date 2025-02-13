@@ -96,7 +96,7 @@ def train(
 
         # Try to sample from the latent space and decode
         latent_space = torch.randn(10000, 32).to(device)
-        output = model.decode(latent_space).cpu().numpy()
+        output = model.decode(latent_space).detach().cpu().numpy()
         output_seqs = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_validity = validate_seqs(output_seqs, is_valid)
 
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     )
     val_loader = torch.utils.data.DataLoader(
         data_val,
-        batch_size=int(parser["RUN"]["batch_size"]*4),
+        batch_size=int(parser["RUN"]["batch_size"]),
         shuffle=False,
         num_workers=int(parser["RUN"]["num_workers"]),
     )
