@@ -90,14 +90,15 @@ def train(
         val_loss /= len(val_loader)
 
         # Decode example SMILES
+        val_outputs = torch.cat(val_outputs, dim=0).numpy()
         output_smiles = decode_seq_from_output(val_outputs, charset)
         valid_seqs, mean_valid = validate_seqs(output_smiles, is_valid)
 
         # Try to sample from the latent space and decode
         latent_space = torch.randn(10000, 32).to(device)
         output = model.decode(latent_space)
-        output_smiles = decode_seq_from_output(output, charset)
-        sampled_seqs, sampled_valid = validate_seqs(output_smiles, is_valid)
+        output_seqs = decode_seq_from_output(output, charset)
+        sampled_seqs, sampled_validity = validate_seqs(output_seqs, is_valid)
 
         annealer.step()
         wandb.log(
@@ -108,7 +109,7 @@ def train(
              "recon_loss_train": mean_recon_loss,
              "annealed_kld_loss": annealed_kld_loss,
              "output_smiles": output_smiles[:16],
-             "sampling_validity": sampled_valid,
+             "sampling_validity": sampled_validity,
              "sampled_seqs": sampled_seqs[:16]
              }
         )
@@ -122,7 +123,6 @@ def train(
     return model
 
 def decode_seq_from_output(output, charset):
-    output = torch.cat(output, dim=0).numpy()
     out_seq = [
         decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output
     ]
