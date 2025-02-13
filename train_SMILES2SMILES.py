@@ -84,13 +84,13 @@ def train(
         val_loss /= len(val_loader)
 
         # Decode example SMILES
-        output_smiles = torch.cat(val_outputs, dim=0).numpy()
+        output_smiles = torch.cat(val_outputs, dim=0).cpu().numpy()
         output_smiles = decode_seq_from_output(output_smiles, charset)
         valid_seqs, mean_valid = validate_seqs(output_smiles, is_valid)
 
         # Try to sample from the latent space and decode
         latent_space = torch.randn(10000, 32).to(device)
-        output = model.decode(latent_space).numpy()
+        output = model.decode(latent_space).cpu().numpy()
         output_smiles = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_valid = validate_seqs(output_smiles, is_valid)
 
@@ -160,7 +160,7 @@ train_loader = torch.utils.data.DataLoader(
     data_train, batch_size=args.batch_size, shuffle=True, num_workers=4
 )
 val_loader = torch.utils.data.DataLoader(
-    data_val, batch_size=args.batch_size, shuffle=False, num_workers=4
+    data_val, batch_size=args.batch_size*4, shuffle=False, num_workers=4
 )
 
 torch.manual_seed(42)
