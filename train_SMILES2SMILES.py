@@ -77,19 +77,6 @@ def train(
         for batch_idx, data in enumerate(val_loader):
             X = data.to(device)
             output, mean, logvar = model(X)
-            if batch_idx % 100 == 0:
-                print(
-                    "Input:",
-                    decode_seq_from_indexes(
-                        X[0].argmax(dim=1).cpu().numpy(), charset
-                    ).replace("[nop]", ""),
-                )
-                print(
-                    "Output:",
-                    decode_seq_from_indexes(
-                        output[0].argmax(dim=1).cpu().numpy(), charset
-                    ).replace("[nop]", ""),
-                )
             recon_loss, kld_loss = criterion(output, X, mean, logvar)
             loss = recon_loss + annealer(kld_loss)
             val_loss += loss.item()
@@ -106,14 +93,18 @@ def train(
         output_smiles = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_valid = validate_seqs(output_smiles, is_valid)
 
+        annealer.step()
         wandb.log(
             {"train_loss": train_loss,
              "val_loss": val_loss,
              "validity": mean_valid,
-             "annealing": annealer(1),
-             "recon_loss_train": mean_recon_loss,
              "kld_loss_train": mean_kld_loss,
-             "annealed_kld_loss": annealed_kld_loss}
+             "recon_loss_train": mean_recon_loss,
+             "annealed_kld_loss": annealed_kld_loss,
+             "output_smiles": output_smiles[:16],
+             "sampling_validity": sampled_valid,
+             "sampled_seqs": sampled_seqs[:16]
+             }
         )
 
         None if disable_annealing else annealer.step()
@@ -126,8 +117,12 @@ def train(
 
     return model
 
-def decode_seq_from_output(output, charset):
-    output = torch.cat(output, dim=0).numpy()
+def decode_seq_from_output(output: list[torch.Tensor], charset: list[str]) -> list[str]:
+    print("Decoding sequences from output")
+    print("Output type:", type(output))
+    print("Output[0] shape:", output[0].shape)
+
+    output = torch.cat(output, dim=0,).numpy()
     out_seq = [
         decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output
     ]

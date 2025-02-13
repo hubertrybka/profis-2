@@ -169,6 +169,8 @@ if __name__ == "__main__":
 
     out_encoding = parser["RUN"]["out_encoding"]
     fp_len = int(parser["MODEL"]["fp_len"])
+    overwrite_model_dir = parser["RUN"].getboolean("overwrite_model_dir")
+
     if out_encoding.lower() == "smiles":
         data_train = ProfisDataset(train_df, fp_len=fp_len)
         data_val = ProfisDataset(test_df, fp_len=fp_len)
@@ -202,6 +204,8 @@ if __name__ == "__main__":
     model_name = parser["RUN"]["run_name"]
     if os.path.exists(f"models/{model_name}") is False:
         os.makedirs(f"models/{model_name}")
+    elif args.overwrite_model_dir:
+        pass
     else:
         raise ValueError(f"Model directory of the name {model_name} already exists")
 
