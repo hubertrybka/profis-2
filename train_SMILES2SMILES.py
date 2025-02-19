@@ -104,11 +104,8 @@ def train(
              "kld_loss_train": mean_kld_loss,
              "recon_loss_train": mean_recon_loss,
              "annealed_kld_loss": annealed_kld_loss,
-             "output_smiles": wandb.Table(dataframe=output_smiles),
-             "sampling_validity": sampled_validity,
-             "sampled_seqs": wandb.Table(dataframe=sampled_seqs)
+             "sampling_validity": sampled_validity
              })
-        )
 
         None if disable_annealing else annealer.step()
 
@@ -117,6 +114,8 @@ def train(
 
         if epoch % 50 == 0:
             torch.save(model.state_dict(), f"models/{args.name}/epoch_{epoch}.pt")
+            wandb.log({"output_smiles": wandb.Table(dataframe=output_smiles),
+                       "sampled_seqs": wandb.Table(dataframe=sampled_seqs)})
 
     return model
 
