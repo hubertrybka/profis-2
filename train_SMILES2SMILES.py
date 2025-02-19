@@ -36,7 +36,7 @@ def train(
     beta=1.0
 ):
     charset = load_charset()
-    annealer = Annealer(1000, "cosine", baseline=0.0)
+    annealer = Annealer(50, "cosine", baseline=0.0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print("Using device:", device)
 
