@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=smiles2smiles_no_anneal
+#SBATCH --job-name=smiles2smiles_64
 #SBATCH --partition=dgx_A100
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=32G
+#SBATCH --cpus-per-task=8
+#SBATCH --mem-per-cpu=4G
 source /raid/soft/miniconda/bin/activate
 conda init bash
 conda activate profis
 wandb login 505ce3ad45fdf9309c3d8ec1d9764262ae6929c1
-python train_SMILES2SMILES.py --epochs 600 --batch_size 512 --lr 0.0002 --name smiles2smiles_no_anneal --eps_coef 1 --latent_size 32 --disable_annealing
+python train_SMILES2SMILES.py --epochs 2000 --batch_size 512 --lr 0.0003 --name smiles2smiles_long_anneal_again --eps_coef 1 --latent_size 64 --beta 1
