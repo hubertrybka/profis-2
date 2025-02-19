@@ -26,6 +26,7 @@ class MolecularVAE(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def encode(self, x):
+        x = x.permute(0, 2, 1)
         x = self.relu(self.conv_1(x))
         x = self.relu(self.conv_2(x))
         x = self.relu(self.conv_3(x))
