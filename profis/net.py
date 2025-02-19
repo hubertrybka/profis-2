@@ -9,10 +9,10 @@ class MolecularVAE(nn.Module):
     def __init__(self, latent_size=32, alphabet_size=30, dropout=0, eps_coef=1):
         super(MolecularVAE, self).__init__()
 
-        self.conv_1 = nn.Conv1d(100, 9, kernel_size=9)
+        self.conv_1 = nn.Conv1d(alphabet_size, 9, kernel_size=9)
         self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
         self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
-        self.fc1 = nn.Linear(40, 435)
+        self.fc1 = nn.Linear(740, 435)
         self.fc2 = nn.Linear(435, latent_size)
         self.fc3 = nn.Linear(435, latent_size)
 
