@@ -89,8 +89,17 @@ def train(
         valid_seqs, mean_valid = validate_seqs(output_smiles, is_valid)
 
         # Try to sample from the latent space and decode
-        latent_space = torch.randn(10000, 32).to(device)
-        output = model.decode(latent_space).detach().cpu().numpy()
+        latent_space = torch.randn(10000, 32)
+        latent_dataset = torch.utils.data.TensorDataset(latent_space)
+        latent_loader = torch.utils.data.DataLoader(
+            latent_dataset, batch_size=1024, shuffle=False)
+        model.eval()
+
+        sampled = []
+        for data in latent_loader:
+            Z = data[0].to(device)
+            sampled.append(model.decode(Z).detach().cpu().numpy())
+        output = torch.cat(sampled, dim=0)
         output_smiles = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_validity = validate_seqs(output_smiles, is_valid)
         output_smiles = pd.DataFrame({"smiles": output_smiles[:64]})
