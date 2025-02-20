@@ -98,7 +98,7 @@ def train(
         sampled = []
         for data in latent_loader:
             Z = data[0].to(device)
-            sampled.append(model.decode(Z).detach().cpu().numpy())
+            sampled.append(model.decode(Z).detach().cpu())
         output = torch.cat(sampled, dim=0)
         output_smiles = decode_seq_from_output(output, charset)
         sampled_seqs, sampled_validity = validate_seqs(output_smiles, is_valid)
