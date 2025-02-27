@@ -4,6 +4,7 @@ from profis.utils import decode_seq_from_indexes, load_charset, initialize_profi
 from tqdm import tqdm
 from rdkit import Chem
 import pandas as pd
+from scipy.spatial.distance import jacard, jaccard
 
 #suppress rdkit warnings
 from rdkit import RDLogger
@@ -53,18 +54,13 @@ def forward_w_fp_noise(fp, model, n_bits=10, n_tries=1000, device="cuda"):
     validity = sum([is_valid(smile) for smile in out_smiles]) / len(out_smiles)
     return out_smiles, validity
 
-def get_tanimoto_similarity(fp1, fp2):
-    intersection = np.sum(fp1 * fp2)
-    union = np.sum(fp1 + fp2)
-    return intersection / union
-
 def get_tanimoto_similarities(ref_smiles, out_smiles):
     fp = smiles2sparse_KRFP(ref_smiles)
     tanimotos = []
     for smile in out_smiles:
         try:
             fp2 = smiles2sparse_KRFP(smile)
-            tanimoto = get_tanimoto_similarity(fp, fp2)
+            tanimoto = jaccard(fp2, fp)
             tanimotos.append(tanimoto)
         except:
             tanimotos.append(0)
