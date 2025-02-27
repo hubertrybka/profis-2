@@ -4,7 +4,7 @@ from profis.utils import decode_seq_from_indexes, load_charset, initialize_profi
 from tqdm import tqdm
 from rdkit import Chem
 import pandas as pd
-from scipy.spatial.distance import jacard, jaccard
+from scipy.spatial.distance import jaccard
 
 #suppress rdkit warnings
 from rdkit import RDLogger
